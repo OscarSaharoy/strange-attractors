@@ -1,15 +1,19 @@
 // Oscar Saharoy 2021
 
-const dt      = 10e-3;
+const dt      = 1e-2;
 const nPoints = 3200;
 const points  = new Array(nPoints);
 points[0]     = [1, 0, 0];
 
 // arrays that will contain the strange attractor geometry data
 let nVerts = (nPoints - 3) * 24;
-let faces  = new Array( nVerts );
-let norms  = new Array( nVerts );
-let idxs   = new Array( nVerts );
+let faces  = new Float32Array( (nPoints - 3) * 48 );
+let norms  = new Float32Array( (nPoints - 3) * 48 );
+let idxs   = new Uint16Array(  (nPoints - 3) * 24 );
+
+// a bounding box to contain all the attractor points
+let maxBBoxCorner = [0, 0, 0];
+let minBBoxCorner = [0, 0, 0];
 
 // vector operations
 const mul      = (vec , k   ) => vec.map( v => v*k );
@@ -22,6 +26,26 @@ const norm     =  vec         => mul( vec, 1/mod(vec) );
 const cross    = (vec1, vec2) => [ vec1[1]*vec2[2] - vec1[2]*vec2[1],
                                    vec1[2]*vec2[0] - vec1[0]*vec2[2],
                                    vec1[0]*vec2[1] - vec1[1]*vec2[0] ]
+
+
+function calcPoint(points, i) {
+
+    // get current x y and z from the points array
+    const x = points[i-1][0],
+          y = points[i-1][1],
+          z = points[i-1][2];
+
+    // calculate dx dy and dz using the strange attractor formulae
+    const dx = 10 * ( y  - x );
+    const dy = x  * ( 28 - z ) - y;
+    const dz = x  *   y  - 8/3 * z;
+
+    // calculate next point by incrementing position by diffentials
+    // and put it in the array
+    points[i] = [ x + dx * dt ,
+                  y + dy * dt ,
+                  z + dz * dt ];
+}
 
 
 function calcPointRK4(points, i) {
@@ -78,28 +102,10 @@ function calcPointRK4(points, i) {
                   z0 + ( dz1 + 2*dz2 + 2*dz3 + dz4 ) * dt/6 ];
 }
 
-function calcPoint(points, i) {
 
-    // get current x y and z from the points array
-    const x = points[i-1][0],
-          y = points[i-1][1],
-          z = points[i-1][2];
+function makeGeometry( points ) {
 
-    // calculate dx dy and dz using the strange attractor formulae
-    const dx = 10 * ( y  - x );
-    const dy = x  * ( 28 - z ) - y;
-    const dz = x  *   y  - 8/3 * z;
-
-    // calculate next point by increamenting position by diffentials
-    // and put it in the array
-    points[i] = [ x + dx * dt ,
-                  y + dy * dt ,
-                  z + dz * dt ];
-}
-
-function makeGeometryOpt( points ) {
-
-    // first calculate vertices at the second point of points
+    // first calculate vertices and normal and curve vectors at the second point of points
 
     // get components of first second and third points
 
@@ -130,13 +136,13 @@ function makeGeometryOpt( points ) {
 
     // calculate normal vector
 
-    let cpdx     = cX - pX,
-        cpdy     = cY - pY,
-        cpdz     = cZ - pZ;
+    let cpdx = cX - pX,
+        cpdy = cY - pY,
+        cpdz = cZ - pZ;
 
-    let ncdx     = nX - cX,
-        ncdy     = nY - cY,
-        ncdz     = nZ - cZ;
+    let ncdx = nX - cX,
+        ncdy = nY - cY,
+        ncdz = nZ - cZ;
 
     let prevNormalX  = ncdy*cpdz - ncdz*cpdy,
         prevNormalY  = ncdz*cpdx - ncdx*cpdz,
@@ -260,77 +266,160 @@ function makeGeometryOpt( points ) {
               currentBottomLeftY  = cY - curveY * 0.15 - normalY * 0.15,
               currentBottomLeftZ  = cZ - curveZ * 0.15 - normalZ * 0.15;
 
-        let baseIdx      = faces.length/3;
-        const idxOffsets = [ 0, 1, 2,  0, 2, 3 ];
 
-        const topFace    = [ currentTopLeftX , currentTopLeftY , currentTopLeftZ  ,
-                             prevTopLeftX    , prevTopLeftY    , prevTopLeftZ     ,
-                             prevTopRightX   , prevTopRightY   , prevTopRightZ    ,
-                             currentTopRightX, currentTopRightY, currentTopRightZ ];
-        faces.push(...topFace);
+        // each iteration we push 4 faces each with 4 corners, each corner has 3 components
+        // 4*4*3 = 48
+        // each face takes 6 indices
+        // 4*6 = 24
 
-        const topNorms = [ ...currentRing.normal  ,
-                           ...prevRing.normal   ,
-                           ...prevRing.normal   ,
-                           ...currentRing.normal ];
-        norms.push(...topNorms);
-
-        const topIdxs    = idxOffsets.map( idx => idx + baseIdx );
-        idxs.push(...topIdxs);
+        let baseIdx    = faces.length/3;
+        const faceBase = 48 * (idx-2);
+        const idxBase  = 24 * (idx-2);
+        const preFaces = 16 * (idx-2);
 
 
-        // baseIdx = faces.length/3;
+        // left face
 
-        // const rightFace = [ ...currentRing.topRight    ,
-        //                     ...prevRing.topRight       ,
-        //                     ...prevRing.bottomRight    , 
-        //                     ...currentRing.bottomRight ];
-        // faces.push( ...rightFace );
+        faces[ faceBase      ] = currentTopLeftX ;
+        faces[ faceBase + 1  ] = currentTopLeftY ;
+        faces[ faceBase + 2  ] = currentTopLeftZ ;
+        faces[ faceBase + 3  ] = prevTopLeftX    ;
+        faces[ faceBase + 4  ] = prevTopLeftY    ;
+        faces[ faceBase + 5  ] = prevTopLeftZ    ;
+        faces[ faceBase + 6  ] = prevTopRightX   ;
+        faces[ faceBase + 7  ] = prevTopRightY   ;
+        faces[ faceBase + 8  ] = prevTopRightZ   ;
+        faces[ faceBase + 9  ] = currentTopRightX;
+        faces[ faceBase + 10 ] = currentTopRightY;
+        faces[ faceBase + 11 ] = currentTopRightZ;
+   
+        norms[ faceBase      ] = normalX    ;
+        norms[ faceBase + 1  ] = normalY    ;
+        norms[ faceBase + 2  ] = normalZ    ;
+        norms[ faceBase + 3  ] = prevNormalX;
+        norms[ faceBase + 4  ] = prevNormalY;
+        norms[ faceBase + 5  ] = prevNormalZ;
+        norms[ faceBase + 6  ] = prevNormalX;
+        norms[ faceBase + 7  ] = prevNormalY;
+        norms[ faceBase + 8  ] = prevNormalZ;
+        norms[ faceBase + 9  ] = normalX    ;
+        norms[ faceBase + 10 ] = normalY    ;
+        norms[ faceBase + 11 ] = normalZ    ;
 
-        // const rightNorms = [ ...currentRing.curve,
-        //                      ...prevRing.curve   ,
-        //                      ...prevRing.curve   ,
-        //                      ...currentRing.curve ];
-        // norms.push( ...rightNorms );
-
-        // const rightIdxs = idxOffsets.map( idx => idx + baseIdx );
-        // idxs.push( ...rightIdxs );
+        idxs[  idxBase       ] = 0 + preFaces;
+        idxs[  idxBase  + 1  ] = 1 + preFaces;
+        idxs[  idxBase  + 2  ] = 2 + preFaces;
+        idxs[  idxBase  + 3  ] = 0 + preFaces;
+        idxs[  idxBase  + 4  ] = 2 + preFaces;
+        idxs[  idxBase  + 5  ] = 3 + preFaces;
 
 
-        // baseIdx = faces.length/3;
+        // right face
 
-        // const bottomFace = [ ...currentRing.bottomRight ,
-        //                      ...prevRing.bottomRight    ,
-        //                      ...prevRing.bottomLeft     , 
-        //                      ...currentRing.bottomLeft  ];
-        // faces.push( ...bottomFace );
+        faces[ faceBase + 12 ] = currentTopRightX   ;
+        faces[ faceBase + 13 ] = currentTopRightY   ;
+        faces[ faceBase + 14 ] = currentTopRightZ   ;
+        faces[ faceBase + 15 ] = prevTopRightX      ;
+        faces[ faceBase + 16 ] = prevTopRightY      ;
+        faces[ faceBase + 17 ] = prevTopRightZ      ;
+        faces[ faceBase + 18 ] = prevBottomRightX   ;
+        faces[ faceBase + 19 ] = prevBottomRightY   ;
+        faces[ faceBase + 20 ] = prevBottomRightZ   ;
+        faces[ faceBase + 21 ] = currentBottomRightX;
+        faces[ faceBase + 22 ] = currentBottomRightY;
+        faces[ faceBase + 23 ] = currentBottomRightZ;
+   
+        norms[ faceBase + 12 ] = curveX    ;
+        norms[ faceBase + 13 ] = curveY    ;
+        norms[ faceBase + 14 ] = curveZ    ;
+        norms[ faceBase + 15 ] = prevCurveX;
+        norms[ faceBase + 16 ] = prevCurveY;
+        norms[ faceBase + 17 ] = prevCurveZ;
+        norms[ faceBase + 18 ] = prevCurveX;
+        norms[ faceBase + 19 ] = prevCurveY;
+        norms[ faceBase + 20 ] = prevCurveZ;
+        norms[ faceBase + 21 ] = curveX    ;
+        norms[ faceBase + 22 ] = curveY    ;
+        norms[ faceBase + 23 ] = curveZ    ;
 
-        // const bottomNorms = [ ...minus(currentRing.normal),
-        //                       ...minus(prevRing.normal   ),
-        //                       ...minus(prevRing.normal   ),
-        //                       ...minus(currentRing.normal) ];
-        // norms.push( ...bottomNorms );
-
-        // const bottomIdxs = idxOffsets.map( idx => idx + baseIdx );
-        // idxs.push( ...bottomIdxs );
+        idxs[  idxBase  + 6  ] = 4 + preFaces;
+        idxs[  idxBase  + 7  ] = 5 + preFaces;
+        idxs[  idxBase  + 8  ] = 6 + preFaces;
+        idxs[  idxBase  + 9  ] = 4 + preFaces;
+        idxs[  idxBase  + 10 ] = 6 + preFaces;
+        idxs[  idxBase  + 11 ] = 7 + preFaces;
 
 
-        // baseIdx = faces.length/3;
+        // bottom face
 
-        // const leftFace = [ ...currentRing.bottomLeft ,
-        //                      ...prevRing.bottomLeft  ,
-        //                      ...prevRing.topLeft     , 
-        //                      ...currentRing.topLeft  ];
-        // faces.push( ...leftFace );
+        faces[ faceBase + 24 ] = currentBottomRightX;
+        faces[ faceBase + 25 ] = currentBottomRightY;
+        faces[ faceBase + 26 ] = currentBottomRightZ; 
+        faces[ faceBase + 27 ] = prevBottomRightX   ;
+        faces[ faceBase + 28 ] = prevBottomRightY   ;
+        faces[ faceBase + 29 ] = prevBottomRightZ   ; 
+        faces[ faceBase + 30 ] = prevBottomLeftX    ;
+        faces[ faceBase + 31 ] = prevBottomLeftY    ;
+        faces[ faceBase + 32 ] = prevBottomLeftZ    ; 
+        faces[ faceBase + 33 ] = currentBottomLeftX ;
+        faces[ faceBase + 34 ] = currentBottomLeftY ;
+        faces[ faceBase + 35 ] = currentBottomLeftZ ;
+   
+        norms[ faceBase + 24 ] = -normalX    ;
+        norms[ faceBase + 25 ] = -normalY    ;
+        norms[ faceBase + 26 ] = -normalZ    ; 
+        norms[ faceBase + 27 ] = -prevNormalX;
+        norms[ faceBase + 28 ] = -prevNormalY;
+        norms[ faceBase + 29 ] = -prevNormalZ; 
+        norms[ faceBase + 30 ] = -prevNormalX;
+        norms[ faceBase + 31 ] = -prevNormalY;
+        norms[ faceBase + 32 ] = -prevNormalZ; 
+        norms[ faceBase + 33 ] = -normalX    ;
+        norms[ faceBase + 34 ] = -normalY    ;
+        norms[ faceBase + 35 ] = -normalZ    ;
 
-        // const leftNorms = [ ...minus(currentRing.curve),
-        //                       ...minus(prevRing.curve   ),
-        //                       ...minus(prevRing.curve   ),
-        //                       ...minus(currentRing.curve) ];
-        // norms.push( ...leftNorms );
+        idxs[  idxBase  + 12 ] = 8  + preFaces;
+        idxs[  idxBase  + 13 ] = 9  + preFaces;
+        idxs[  idxBase  + 14 ] = 10 + preFaces;
+        idxs[  idxBase  + 15 ] = 8  + preFaces;
+        idxs[  idxBase  + 16 ] = 10 + preFaces;
+        idxs[  idxBase  + 17 ] = 11 + preFaces;
+        
 
-        // const leftIdxs = idxOffsets.map( idx => idx + baseIdx );
-        // idxs.push( ...leftIdxs );
+        // left face
+
+        faces[ faceBase + 36 ] = currentBottomLeftX;
+        faces[ faceBase + 37 ] = currentBottomLeftY; 
+        faces[ faceBase + 38 ] = currentBottomLeftZ;  
+        faces[ faceBase + 39 ] = prevBottomLeftX   ; 
+        faces[ faceBase + 40 ] = prevBottomLeftY   ; 
+        faces[ faceBase + 41 ] = prevBottomLeftZ   ;  
+        faces[ faceBase + 42 ] = prevTopLeftX      ; 
+        faces[ faceBase + 43 ] = prevTopLeftY      ; 
+        faces[ faceBase + 44 ] = prevTopLeftZ      ; 
+        faces[ faceBase + 45 ] = currentTopLeftX   ; 
+        faces[ faceBase + 46 ] = currentTopLeftY   ; 
+        faces[ faceBase + 47 ] = currentTopLeftZ   ; 
+   
+        norms[ faceBase + 36 ] = -curveX    ;
+        norms[ faceBase + 37 ] = -curveY    ;
+        norms[ faceBase + 38 ] = -curveZ    ;
+        norms[ faceBase + 39 ] = -prevCurveX;
+        norms[ faceBase + 40 ] = -prevCurveY;
+        norms[ faceBase + 41 ] = -prevCurveZ;
+        norms[ faceBase + 42 ] = -prevCurveX;
+        norms[ faceBase + 43 ] = -prevCurveY;
+        norms[ faceBase + 44 ] = -prevCurveZ;
+        norms[ faceBase + 45 ] = -curveX    ;
+        norms[ faceBase + 46 ] = -curveY    ;
+        norms[ faceBase + 47 ] = -curveZ    ;
+
+        idxs[  idxBase  + 18 ] = 12 + preFaces;
+        idxs[  idxBase  + 19 ] = 13 + preFaces;
+        idxs[  idxBase  + 20 ] = 14 + preFaces;
+        idxs[  idxBase  + 21 ] = 12 + preFaces;
+        idxs[  idxBase  + 22 ] = 14 + preFaces;
+        idxs[  idxBase  + 23 ] = 15 + preFaces;
 
 
         // store the normal and curve vectors and vertices for next iteration
@@ -361,274 +450,8 @@ function makeGeometryOpt( points ) {
     }
 }
 
-function makeGeometry( points ) {
-
-    const rings = [];
-
-    for( let idx = 1; idx < points.length-1; ++idx ) {
-
-        const prevPoint    = points[idx-1];
-        const currentPoint = points[idx  ];
-        const nextPoint    = points[idx+1];
-
-        const tangent = norm( sub( nextPoint, prevPoint ) );
-        const normal  = norm( cross( sub( nextPoint, currentPoint ),
-                                     sub( currentPoint, prevPoint ) ) );
-        const curve   = cross( tangent, normal );
-
-        //          ^ normal
-        //          |
-        //          |
-        //  tangent x ---> curve
-
-
-        const toTopRight    = mul( add( curve, normal ),  0.15 );
-        const toBottomRight = mul( sub( curve, normal ),  0.15 );
-        const toTopLeft     = mul( sub( normal, curve ),  0.15 );
-        const toBottomLeft  = mul( add( normal, curve ), -0.15 );
-
-        rings.push( { topRight   : add( currentPoint, toTopRight    ),
-                      bottomRight: add( currentPoint, toBottomRight ),
-                      topLeft    : add( currentPoint, toTopLeft     ),
-                      bottomLeft : add( currentPoint, toBottomLeft  ),
-                      normal     : normal,
-                      curve      : curve  } );
-
-        if( idx >= 2 ) {
-
-            const prevRing    = rings[idx-2];
-            const currentRing = rings[idx-1];
-            let baseIdx       = faces.length/3;
-
-            const topFace    = [ ...currentRing.topLeft  ,
-                                 ...prevRing.topLeft     ,
-                                 ...prevRing.topRight    , 
-                                 ...currentRing.topRight ];
-            faces.push(...topFace);
-
-            const topNorms = [ ...currentRing.normal,
-                                 ...prevRing.normal   ,
-                                 ...prevRing.normal   ,
-                                 ...currentRing.normal ];
-            norms.push(...topNorms);
-
-            const topIdxs    = [ 0, 1, 2,  0, 2, 3 ].map( idx => idx + baseIdx );
-            idxs.push(...topIdxs);
-
-
-            baseIdx = faces.length/3;
-
-            const rightFace = [ ...currentRing.topRight    ,
-                                ...prevRing.topRight       ,
-                                ...prevRing.bottomRight    , 
-                                ...currentRing.bottomRight ];
-            faces.push( ...rightFace );
-
-            const rightNorms = [ ...currentRing.curve,
-                                 ...prevRing.curve   ,
-                                 ...prevRing.curve   ,
-                                 ...currentRing.curve ];
-            norms.push( ...rightNorms );
-
-            const rightIdxs = [ 0, 1, 2,  0, 2, 3 ].map( idx => idx + baseIdx );
-            idxs.push( ...rightIdxs );
-
-
-            baseIdx = faces.length/3;
-
-            const bottomFace = [ ...currentRing.bottomRight ,
-                                 ...prevRing.bottomRight    ,
-                                 ...prevRing.bottomLeft     , 
-                                 ...currentRing.bottomLeft  ];
-            faces.push( ...bottomFace );
-
-            const bottomNorms = [ ...minus(currentRing.normal),
-                                  ...minus(prevRing.normal   ),
-                                  ...minus(prevRing.normal   ),
-                                  ...minus(currentRing.normal) ];
-            norms.push( ...bottomNorms );
-
-            const bottomIdxs = [ 0, 1, 2,  0, 2, 3 ].map( idx => idx + baseIdx );
-            idxs.push( ...bottomIdxs );
-
-
-            baseIdx = faces.length/3;
-
-            const leftFace = [ ...currentRing.bottomLeft ,
-                                 ...prevRing.bottomLeft  ,
-                                 ...prevRing.topLeft     , 
-                                 ...currentRing.topLeft  ];
-            faces.push( ...leftFace );
-
-            const leftNorms = [ ...minus(currentRing.curve),
-                                  ...minus(prevRing.curve   ),
-                                  ...minus(prevRing.curve   ),
-                                  ...minus(currentRing.curve) ];
-            norms.push( ...leftNorms );
-
-            const leftIdxs = [ 0, 1, 2,  0, 2, 3 ].map( idx => idx + baseIdx );
-            idxs.push( ...leftIdxs );
-
-            nVerts = idxs.length;
-        }
-    }
-}
-
-console.time("push");
 for( let i=1; i<nPoints; ++i ) calcPointRK4(points, i);
-console.timeEnd("push");
-
-console.time("geometry");
 makeGeometry(points);
-console.timeEnd("geometry");
-
-const cube = [
-
-    // Front face
-    -1.0, -1.0,  1.0,
-     1.0, -1.0,  1.0,
-     1.0,  1.0,  1.0,
-    -1.0,  1.0,  1.0,
-
-    // Back face
-    -1.0, -1.0, -1.0,
-    -1.0,  1.0, -1.0,
-     1.0,  1.0, -1.0,
-     1.0, -1.0, -1.0,
-
-    // Top face
-    -1.0,  1.0, -1.0,
-    -1.0,  1.0,  1.0,
-     1.0,  1.0,  1.0,
-     1.0,  1.0, -1.0,
-
-    // Bottom face
-    -1.0, -1.0, -1.0,
-     1.0, -1.0, -1.0,
-     1.0, -1.0,  1.0,
-    -1.0, -1.0,  1.0,
-
-    // Right face
-     1.0, -1.0, -1.0,
-     1.0,  1.0, -1.0,
-     1.0,  1.0,  1.0,
-     1.0, -1.0,  1.0,
-
-    // Left face
-    -1.0, -1.0, -1.0,
-    -1.0, -1.0,  1.0,
-    -1.0,  1.0,  1.0,
-    -1.0,  1.0, -1.0,
-];
-
-const vertexNormals = [
-
-    // Front
-     0.0,  0.0,  1.0,
-     0.0,  0.0,  1.0,
-     0.0,  0.0,  1.0,
-     0.0,  0.0,  1.0,
-
-    // Back
-     0.0,  0.0, -1.0,
-     0.0,  0.0, -1.0,
-     0.0,  0.0, -1.0,
-     0.0,  0.0, -1.0,
-
-    // Top
-     0.0,  1.0,  0.0,
-     0.0,  1.0,  0.0,
-     0.0,  1.0,  0.0,
-     0.0,  1.0,  0.0,
-
-    // Bottom
-     0.0, -1.0,  0.0,
-     0.0, -1.0,  0.0,
-     0.0, -1.0,  0.0,
-     0.0, -1.0,  0.0,
-
-    // Right
-     1.0,  0.0,  0.0,
-     1.0,  0.0,  0.0,
-     1.0,  0.0,  0.0,
-     1.0,  0.0,  0.0,
-
-    // Left
-    -1.0,  0.0,  0.0,
-    -1.0,  0.0,  0.0,
-    -1.0,  0.0,  0.0,
-    -1.0,  0.0,  0.0
-];
-
-const indices = [
-    0,  1,  2,    0,  2,  3,    // front
-    4,  5,  6,    4,  6,  7,    // back
-    8,  9,  10,   8,  10, 11,   // top
-    12, 13, 14,   12, 14, 15,   // bottom
-    16, 17, 18,   16, 18, 19,   // right
-    20, 21, 22,   20, 22, 23,   // left
-];
-
-const profile = [
-
-    // Top face
-    -1.0,  1.0, -1.0,
-    -1.0,  1.0,  1.0,
-     1.0,  1.0,  1.0,
-     1.0,  1.0, -1.0,
-
-    // Bottom face
-    -1.0, -1.0, -1.0,
-     1.0, -1.0, -1.0,
-     1.0, -1.0,  1.0,
-    -1.0, -1.0,  1.0,
-
-    // Right face
-     1.0, -1.0, -1.0,
-     1.0,  1.0, -1.0,
-     1.0,  1.0,  1.0,
-     1.0, -1.0,  1.0,
-
-    // Left face
-    -1.0, -1.0, -1.0,
-    -1.0, -1.0,  1.0,
-    -1.0,  1.0,  1.0,
-    -1.0,  1.0, -1.0,
-];
-
-const profileNormals = [
-
-    // Top
-     0.0,  1.0,  0.0,
-     0.0,  1.0,  0.0,
-     0.0,  1.0,  0.0,
-     0.0,  1.0,  0.0,
-
-    // Bottom
-     0.0, -1.0,  0.0,
-     0.0, -1.0,  0.0,
-     0.0, -1.0,  0.0,
-     0.0, -1.0,  0.0,
-
-    // Right
-     1.0,  0.0,  0.0,
-     1.0,  0.0,  0.0,
-     1.0,  0.0,  0.0,
-     1.0,  0.0,  0.0,
-
-    // Left
-    -1.0,  0.0,  0.0,
-    -1.0,  0.0,  0.0,
-    -1.0,  0.0,  0.0,
-    -1.0,  0.0,  0.0
-];
-
-const profileIndices = [
-    0,  1,  2,    0,  2,  3,    // top
-    4,  5,  6,    4,  6,  7,    // bottom
-    8,  9,  10,   8,  10, 11,   // right
-    12, 13, 14,   12, 14, 15,   // left
-];
 
 var forward  = vec3.fromValues(1, 0, 0);
 var up       = vec3.fromValues(0, 1, 0);
@@ -745,15 +568,15 @@ function initBuffers(gl) {
     
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(faces), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, faces, gl.STATIC_DRAW );
 
     const normalBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(norms), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, norms, gl.STATIC_DRAW );
     
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idxs), gl.STATIC_DRAW );
+    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, idxs, gl.STATIC_DRAW );
 
     return {position: positionBuffer,
             indices:  indexBuffer,
@@ -761,6 +584,10 @@ function initBuffers(gl) {
 }
 
 function drawScene(gl, programInfo, buffers) {
+
+    // generate the strange attractor geometry
+    for( let i=1; i<nPoints; ++i ) calcPointRK4(points, i);
+    makeGeometry(points);   
 
     // Clear the canvas before we start drawing on it.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
