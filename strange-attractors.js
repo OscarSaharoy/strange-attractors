@@ -1,7 +1,7 @@
 // Oscar Saharoy 2021
 
-const dt      = 1e-2;
-const nPoints = 3200;
+const dt      = 5e-3;
+const nPoints = 6400;
 const points  = new Array(nPoints);
 points[0]     = [1, 0, 0];
 
@@ -12,8 +12,10 @@ let norms  = new Float32Array( (nPoints - 3) * 48 );
 let idxs   = new Uint16Array(  (nPoints - 3) * 24 );
 
 // a bounding box to contain all the attractor points
-let maxBBoxCorner = [0, 0, 0];
-let minBBoxCorner = [0, 0, 0];
+let maxBBoxCorner = [-Infinity, -Infinity, -Infinity];
+let minBBoxCorner = [ Infinity,  Infinity,  Infinity];
+let bBoxCentre    = [0, 0, 0];
+let centreOfMass  = [0, 0, 0];
 
 // vector operations
 const mul      = (vec , k   ) => vec.map( v => v*k );
@@ -28,7 +30,7 @@ const cross    = (vec1, vec2) => [ vec1[1]*vec2[2] - vec1[2]*vec2[1],
                                    vec1[0]*vec2[1] - vec1[1]*vec2[0] ]
 
 
-function calcPoint(points, i) {
+function calcPoint(points, i, rho, theta, beta ) {
 
     // get current x y and z from the points array
     const x = points[i-1][0],
@@ -36,9 +38,9 @@ function calcPoint(points, i) {
           z = points[i-1][2];
 
     // calculate dx dy and dz using the strange attractor formulae
-    const dx = 10 * ( y  - x );
-    const dy = x  * ( 28 - z ) - y;
-    const dz = x  *   y  - 8/3 * z;
+    const dx = theta * ( y - x );
+    const dy = x  * ( rho - z ) - y;
+    const dz = x  * y - beta * z;
 
     // calculate next point by incrementing position by diffentials
     // and put it in the array
@@ -48,7 +50,7 @@ function calcPoint(points, i) {
 }
 
 
-function calcPointRK4(points, i) {
+function calcPointRK4( points, i, rho, theta, beta ) {
 
     // get current x y and z from the points array
     // and cache the initial values
@@ -60,9 +62,9 @@ function calcPointRK4(points, i) {
 
     // k1
 
-    const dx1 = 10 * ( y  - x );
-    const dy1 = x  * ( 28 - z ) - y;
-    const dz1 = x  *   y  - 8/3 * z;
+    const dx1 = theta * ( y - x );
+    const dy1 = x  * ( rho - z ) - y;
+    const dz1 = x  * y - beta * z;
 
     // k2
 
@@ -70,9 +72,9 @@ function calcPointRK4(points, i) {
     y = y0 + dy1 * dt*0.5;
     z = z0 + dz1 * dt*0.5;
 
-    const dx2 = 10 * ( y  - x );
-    const dy2 = x  * ( 28 - z ) - y;
-    const dz2 = x  *   y  - 8/3 * z;
+    const dx2 = theta * ( y - x );
+    const dy2 = x  * ( rho - z ) - y;
+    const dz2 = x  * y - beta * z;
 
     // k3
 
@@ -80,9 +82,9 @@ function calcPointRK4(points, i) {
     y = y0 + dy2 * dt*0.5;
     z = z0 + dz2 * dt*0.5;
 
-    const dx3 = 10 * ( y  - x );
-    const dy3 = x  * ( 28 - z ) - y;
-    const dz3 = x  *   y  - 8/3 * z;
+    const dx3 = theta * ( y - x );
+    const dy3 = x  * ( rho - z ) - y;
+    const dz3 = x  * y - beta * z;
 
     // k4
 
@@ -90,9 +92,9 @@ function calcPointRK4(points, i) {
     y = y0 + dy3 * dt;
     z = z0 + dz3 * dt;
 
-    const dx4 = 10 * ( y  - x );
-    const dy4 = x  * ( 28 - z ) - y;
-    const dz4 = x  *   y  - 8/3 * z;
+    const dx4 = theta * ( y - x );
+    const dy4 = x  * ( rho - z ) - y;
+    const dz4 = x  * y - beta * z;
     
     // calculate the overall RK4 step, increment initial
     // x y and z positions and put new position into the array
@@ -450,7 +452,26 @@ function makeGeometry( points ) {
     }
 }
 
-for( let i=1; i<nPoints; ++i ) calcPointRK4(points, i);
+
+function fitBBox( points ) {
+
+    for( let i = 0; i < nPoints; ++i ) {
+
+        maxBBoxCorner[0] = Math.max( maxBBoxCorner[0], points[i][0] );
+        maxBBoxCorner[1] = Math.max( maxBBoxCorner[1], points[i][1] );
+        maxBBoxCorner[2] = Math.max( maxBBoxCorner[2], points[i][2] );
+
+        minBBoxCorner[0] = Math.min( minBBoxCorner[0], points[i][0] );
+        minBBoxCorner[1] = Math.min( minBBoxCorner[1], points[i][1] );
+        minBBoxCorner[2] = Math.min( minBBoxCorner[2], points[i][2] );
+    }
+
+    bBoxCentre = mul( add( maxBBoxCorner, minBBoxCorner ), 0.5 );
+    centreOfMass = mul( points.reduce( (acc,val) => add(val, acc), [0,0,0] ), 1/points.length );
+}
+
+
+for( let i=1; i<nPoints; ++i ) calcPointRK4(points, i, 28, 10, 8/3);
 makeGeometry(points);
 
 var forward  = vec3.fromValues(1, 0, 0);
@@ -472,12 +493,12 @@ varying lowp vec4 vLighting;
 void main() {
     gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
 
-    highp vec3 directionalLightColor = vec3(1, 1, 1);
+    highp vec3 directionalLightColor = vec3(0.8, 0.97, 1);
     highp vec3 directionalVector = normalize(vec3(0.85, 0.8, 0.75));
 
     highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
 
-    highp float directional = dot(transformedNormal.xyz, directionalVector);
+    highp float directional = dot(transformedNormal.xyz, directionalVector) * 0.45 + 0.45;
     vLighting = vec4( directionalLightColor * directional, 1.0);
 }
 
@@ -558,8 +579,8 @@ function resize() {
     // match the projection matrix to the current aspect ratio
     const fieldOfView = 45 * Math.PI / 180;
     const aspect = canvas.width / canvas.height;
-    const zNear = 0.1;
-    const zFar = 100.0;
+    const zNear = 1;
+    const zFar = 1000.0;
 
     mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 }
@@ -583,23 +604,27 @@ function initBuffers(gl) {
             normals:  normalBuffer   };
 }
 
-function drawScene(gl, programInfo, buffers) {
+function updateBuffers(gl, buffers) {
 
-    // generate the strange attractor geometry
-    for( let i=1; i<nPoints; ++i ) calcPointRK4(points, i);
-    makeGeometry(points);   
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffers.position );
+    gl.bufferData( gl.ARRAY_BUFFER, faces, gl.STATIC_DRAW );
 
-    // Clear the canvas before we start drawing on it.
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-       
-    // modify the view matrix to rotate the cube
-    mat4.mul(viewMatrix, rot, viewMatrix);
-    mat4.mul(modelViewMatrix, modelMatrix, viewMatrix);
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffers.normals);
+    gl.bufferData( gl.ARRAY_BUFFER, norms, gl.STATIC_DRAW );
+    
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
+    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, idxs, gl.STATIC_DRAW );
+}
+
+function updateMatrices(gl) {
+
+    // update the modelView matrix
+    mat4.mul(modelViewMatrix, viewMatrix, modelMatrix);
 
     // adjust the normal matrix to match the new modelView matrix
     mat4.invert(normalMatrix, modelViewMatrix);
     mat4.transpose(normalMatrix, normalMatrix);
-    
+
     // put all the matrices into the shader program
     gl.uniformMatrix4fv(
         programInfo.projectionMatrix,
@@ -618,8 +643,35 @@ function drawScene(gl, programInfo, buffers) {
         false,
         normalMatrix
     );
-        
-    // draw the cube
+}
+
+let frame = 0;
+
+function drawScene(gl, programInfo, buffers) {
+
+    // Clear the canvas
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+    ++frame;
+
+    // generate the strange attractor geometry
+    for( let i=1; i<nPoints; ++i ) calcPoint( points, i, 28, 10, 8/3 );
+    fitBBox( points );  
+    makeGeometry( points ); 
+
+    // translate the geometry to be centered on the origin
+    mat4.fromTranslation(modelMatrix, minus(bBoxCentre));
+
+    // set the viewpoint
+    mat4.lookAt(viewMatrix, [Math.sin(frame/70)*90,0,Math.cos(frame/70)*90], [0,0,0], [0,1,0]);
+
+
+    // update the shader attributes
+    updateMatrices( gl );
+    updateBuffers( gl, buffers );
+
+    // draw the geometry
     gl.drawElements(gl.TRIANGLES, nVerts, gl.UNSIGNED_SHORT, 0);
     
     // run again next frame
@@ -632,19 +684,16 @@ document.body.onkeydown = function(e){
         (stopped ^= 1) ? mat4.identity(rot) : mat4.fromRotation(rot, 0.02, [-0.3,0.5,0.2]);
     }
 }
-
-const modelMatrix = mat4.create();
-mat4.translate(modelMatrix, modelMatrix, [10.0, 0.0, -27.0]);
     
-const viewMatrix = mat4.create();
-    
+const totalRot = mat4.create();
 const rot = mat4.create();
 mat4.fromRotation(rot, 0.02, [-0.3,0.5,0.2]);
-
+        
+const modelMatrix      = mat4.create();
+const viewMatrix       = mat4.create();
 const normalMatrix     = mat4.create();    
 const modelViewMatrix  = mat4.create();
 const projectionMatrix = mat4.create();
-
 
 const canvas = document.querySelector("#glcanvas")
 const gl     = canvas.getContext("webgl");
@@ -665,11 +714,9 @@ const programInfo = {
 };
 
 
-gl.useProgram( shaderProgram );
-
 
 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-  
+      
 gl.vertexAttribPointer(
     programInfo.vertexPosition,
     3, gl.FLOAT, false, 0, 0
@@ -690,4 +737,6 @@ gl.vertexAttribPointer(
 
 gl.enableVertexAttribArray(programInfo.vertexNormal);
 
+
+gl.useProgram( shaderProgram );
 drawScene(gl, programInfo, buffers);
