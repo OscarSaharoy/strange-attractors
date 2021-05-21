@@ -2,7 +2,7 @@
 	margin:  0;
 	padding: 0;
 	font-family: 'Questrial', sans-serif;
-	letter-spacing: 0.032rem;
+	letter-spacing: 0.04rem;
 	user-select: none;
 	box-sizing: border-box;
 }
@@ -22,12 +22,16 @@ body {
 }
 
 #title {
-	align-self: center;
-	transform: scale(3);
-	opacity: 0.32;
+	justify-self: center;
+	margin-top: 8rem;
+	grid-row: 1;
+	grid-column: 1;
+	font-size: 5rem;
 }
 
 #glcanvas {
 	width:  100vw;
 	height: 100vh;
+	grid-row: 1;
+	grid-column: 1;
 }
