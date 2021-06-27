@@ -34,7 +34,7 @@ void main() {
 // ==================================================================================================================
 
 
-varying highp vec4 vLighting;   
+varying highp vec4 vLighting; 
 
 void main() {
     gl_FragColor = vLighting;
@@ -42,28 +42,30 @@ void main() {
 
 
 // ==================================================================================================================
-`; const vCopyShaderSource = `
+`; const vaaShaderSource = `
 // ==================================================================================================================
 
-
-// precision mediump float;
-
 attribute vec4 aVertexPosition;
-varying vec4 vFragCoord;
+varying highp vec2 vTexCoord;
 
 void main() {
-    gl_Position   = aVertexPosition;
-    vFragCoord.xy = aVertexPosition.xy;
+
+    gl_Position = aVertexPosition;
+    vTexCoord   = ( aVertexPosition.xy + 1.0 ) * 0.5;
 }
 
 
 // ==================================================================================================================
-`; const fCopyShaderSource = `
+`; const faaShaderSource = `
 // ==================================================================================================================
 
 
+varying highp vec2 vTexCoord;
+uniform sampler2D uSampler;
+
 void main() {
-    gl_FragColor = vec4( 0, 0, 0, 1 );
+
+    gl_FragColor = texture2D( uSampler, vTexCoord );
 }
 
 

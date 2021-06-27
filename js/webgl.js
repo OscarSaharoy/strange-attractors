@@ -46,6 +46,8 @@ function onCanvasResize( gl, canvas, projectionMatrix ) {
     canvas.width  = boundingRect.width  * dpr;
     canvas.height = boundingRect.height * dpr;
 
+    console.log("canvas", canvas.width, canvas.height);
+
     // set clip space to match up to canvas corners
     gl.viewport(0, 0, canvas.width, canvas.height);
     
@@ -116,7 +118,13 @@ function createBuffer( gl, target, dataArray ) {
 }
 
 
-function createTexture( gl, width, height ) {
+function createFramebuffer( gl, width, height ) {
+
+    console.log("framebuffer", width, height);
+
+    // create the framebuffer
+    const framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
 
     // create the texture
     const texture = gl.createTexture();
@@ -135,27 +143,25 @@ function createTexture( gl, width, height ) {
                   format, type, data);
 
     // set the filtering so we don't need mips
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR        );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.CLAMP_TO_EDGE );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST       );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST       );
 
-    return texture;
-}
-
-
-function createFramebuffer( gl, texture ) {
-
-    // create the framebuffer
-    const framebuffer = gl.createFramebuffer();
-    gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
+    // create a depth renderbuffer
+    const depthBuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer( gl.RENDERBUFFER, depthBuffer );
+     
+    // make a depth buffer the same size as the targetTexture
+    gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height );
+    gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer );
 
     // attach the texture as the first color attachment
     const attachmentPoint = gl.COLOR_ATTACHMENT0;
-    const level           = 0;
     gl.framebufferTexture2D( gl.FRAMEBUFFER, attachmentPoint,
                              gl.TEXTURE_2D , texture, level );
 
-    return framebuffer;
+    return [framebuffer, texture, depthBuffer];
 }
 
 
@@ -167,10 +173,7 @@ function fillBuffer( gl, target, buffer, dataArray ) {
 }
 
 
-function setupPointer( gl, attribute, buffer ) {
-
-    // enable the vertex position array attribute
-    gl.enableVertexAttribArray( attribute );
+function useArrayBuffer( gl, attribute, buffer ) {
 
     // bind the buffer containing the attractor geometry    
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer );

@@ -1,41 +1,47 @@
 // Oscar Saharoy 2021
 
 
-function drawLoop( gl, programInfo ) {
+function drawLoop( gl ) {
 
     // bind the framebuffer to render to the renderTexture
-    gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
+    // gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
 
     // Clear the color and depth data
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
     // use the rendering program
     gl.useProgram( renderProgram );
+    
+    // use the correct vertex buffers
+    useArrayBuffer( gl, renderProgram.vertexPosition, renderProgram.positionBuffer );
+    useArrayBuffer( gl, renderProgram.vertexNormal  , renderProgram.normalBuffer   );
+
+    // update all the shader matrices
+    updateMatrices();
 
     // draw the geometry to the renderTexture
     gl.drawElements(gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0);
+
 
 
     // bind the canvas instead of the framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, null );
 
     // Clear the color and depth data
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+    // gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
     // use the antialiasing program
-    // gl.useProgram( antialiasingProgram );
+    // gl.useProgram( antiAliasingProgram );
+
+    // use the correct vertex buffer
+    // useArrayBuffer( gl, antiAliasingProgram.vertexPosition, antiAliasingProgram.positionBuffer );
 
     // draw to the canvas
-    gl.drawElements(gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0);
+    // gl.drawElements( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
 
-
-    updateGeometry();
-     
-    // set all the shader matrices
-    updateMatrices();
 
     // run again next frame
-    requestAnimationFrame( () => drawLoop( gl, programInfo ) );
+    requestAnimationFrame( () => drawLoop( gl, renderProgram ) );
 }
 
 
@@ -78,19 +84,19 @@ function updateMatrices() {
 
     // put all the matrices into the shader program
     gl.uniformMatrix4fv(
-        programInfo.projectionMatrix,
+        renderProgram.projectionMatrix,
         false,
         projectionMatrix
     );
 
     gl.uniformMatrix4fv(
-        programInfo.modelViewMatrix,
+        renderProgram.modelViewMatrix,
         false,
         modelViewMatrix
     );
 
     gl.uniformMatrix4fv(
-        programInfo.normalMatrix,
+        renderProgram.normalMatrix,
         false,
         normalMatrix
     );
@@ -111,7 +117,7 @@ let norms  = new Float32Array( (nPoints - 3) * 48 );
 let idxs   = new Uint32Array(  (nPoints - 3) * 24 );
 
 
-// get the webgl drawing context
+// get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
 
 // create the matrices we need
@@ -121,19 +127,11 @@ const normalMatrix     = mat4.create();
 const modelViewMatrix  = mat4.create();
 const projectionMatrix = mat4.create();
 
-// allow canvas to handle resizing
+// allow the canvas to handle resizing
 handleCanvasResize( gl, canvas, projectionMatrix );
 
-// make the shader programs
-const renderProgram       = makeShaderProgram(gl, vsSource         , fsSource         );
-const antialiasingProgram = makeShaderProgram(gl, vCopyShaderSource, fCopyShaderSource);
-
-// enable the render program
-gl.useProgram( renderProgram );
-
 // create the renderTexture and framebuffer
-const renderTexture = createTexture( gl, canvas.width, canvas.height );
-const framebuffer   = createFramebuffer( gl, renderTexture );
+const [framebuffer, renderTexture, depthBuffer] = createFramebuffer( gl, canvas.width, canvas.height );
 
 // make the data buffers
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , faces );
@@ -141,26 +139,66 @@ const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );
 
 
-// collect some info about the program
-const programInfo = {
+// make the render program
+const renderProgram = makeShaderProgram( gl, vsSource, fsSource );
 
-    vertexPosition  : gl.getAttribLocation(  renderProgram, 'aVertexPosition'   ),
-    vertexNormal    : gl.getAttribLocation(  renderProgram, 'aVertexNormal'     ),
+// set some vars in the render program
+renderProgram.vertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
+renderProgram.vertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
 
-    projectionMatrix: gl.getUniformLocation( renderProgram, 'uProjectionMatrix' ),
-    modelViewMatrix : gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  ),
-    normalMatrix    : gl.getUniformLocation( renderProgram, 'uNormalMatrix'     ),
+renderProgram.projectionMatrix = gl.getUniformLocation( renderProgram, 'uProjectionMatrix' );
+renderProgram.modelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
+renderProgram.normalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
 
-    positionBuffer  : positionBuffer,
-    normalBuffer    : normalBuffer  ,
-    indexBuffer     : indexBuffer 
-};
+renderProgram.positionBuffer   = positionBuffer;
+renderProgram.normalBuffer     = normalBuffer;
+renderProgram.indexBuffer      = indexBuffer;
 
-// setup the buffer pointers
-setupPointer( gl, programInfo.vertexPosition, programInfo.positionBuffer );
-setupPointer( gl, programInfo.vertexNormal  , programInfo.normalBuffer   );
+// enable the vertex attributes
+gl.enableVertexAttribArray( renderProgram.vertexPosition );
+gl.enableVertexAttribArray( renderProgram.vertexNormal   );
 
+
+// make the anti aliasing program
+const antiAliasingProgram = makeShaderProgram( gl, vaaShaderSource, faaShaderSource );
+
+const fullScreenQuadFaces = Float32Array.from( [ -1, -1,  0,
+                                                  1, -1,  0,
+                                                  1,  1,  0,
+                                                 -1,  1,  0 ] );
+
+const fullScreenQuadIdxs = Uint32Array.from( [0, 1, 2,
+                                              1, 2, 3] );
+
+// make the fullScreenQuad data buffers
+const fullScreenQuadPositionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , fullScreenQuadFaces );
+const fullScreenQuadIndexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, fullScreenQuadIdxs  );
+
+// set some of the anti aliasing program vars
+antiAliasingProgram.vertexPosition = gl.getAttribLocation(  antiAliasingProgram, 'aVertexPosition' );
+antiAliasingProgram.uSampler       = gl.getUniformLocation( antiAliasingProgram, 'uSampler'        );
+
+antiAliasingProgram.positionBuffer = fullScreenQuadPositionBuffer;
+antiAliasingProgram.indexBuffer    = fullScreenQuadIndexBuffer;
+
+// enable the vertex attributes
+gl.enableVertexAttribArray( antiAliasingProgram.vertexPosition );
+
+gl.useProgram(antiAliasingProgram);
+
+// bind the render texture to the antialiasing shader
+// Tell WebGL we want to affect texture unit 0
+gl.activeTexture(gl.TEXTURE0);
+
+// Bind the texture to texture unit 0
+gl.bindTexture(gl.TEXTURE_2D, renderTexture);
+
+// Tell the shader we bound the texture to texture unit 0
+gl.uniform1i(antiAliasingProgram.uSampler, 0);
+
+
+// make the geometry
 updateGeometry();
 
 // start the draw loop
-drawLoop(gl, programInfo);
+drawLoop( gl );
