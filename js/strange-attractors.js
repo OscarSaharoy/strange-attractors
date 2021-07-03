@@ -3,41 +3,15 @@
 
 function drawLoop( gl ) {
 
-    // bind the framebuffer to render to the renderTexture
-    // gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
-
     // Clear the color and depth data
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
-    // use the rendering program
-    gl.useProgram( renderProgram );
-    
-    // use the correct vertex buffers
-    useArrayBuffer( gl, renderProgram.vertexPosition, renderProgram.positionBuffer );
-    useArrayBuffer( gl, renderProgram.vertexNormal  , renderProgram.normalBuffer   );
-
-    // update all the shader matrices
+    // update the shader matrices
     updateMatrices();
-
-    // draw the geometry to the renderTexture
-    gl.drawElements(gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0);
-
-
-
-    // bind the canvas instead of the framebuffer
-    gl.bindFramebuffer( gl.FRAMEBUFFER, null );
-
-    // Clear the color and depth data
-    // gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-
-    // use the antialiasing program
-    // gl.useProgram( antiAliasingProgram );
-
-    // use the correct vertex buffer
-    // useArrayBuffer( gl, antiAliasingProgram.vertexPosition, antiAliasingProgram.positionBuffer );
 
     // draw to the canvas
     // gl.drawElements( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
+    gl.drawArrays( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
 
 
     // run again next frame
@@ -104,7 +78,7 @@ function updateMatrices() {
 
 
 
-// calcluation variables
+// calculation variables
 let viewPointRotation = 0;
 const dt      = 5e-3;
 const nPoints = 30000;
@@ -129,9 +103,6 @@ const projectionMatrix = mat4.create();
 
 // allow the canvas to handle resizing
 handleCanvasResize( gl, canvas, projectionMatrix );
-
-// create the renderTexture and framebuffer
-const [framebuffer, renderTexture, depthBuffer] = createFramebuffer( gl, canvas.width, canvas.height );
 
 // make the data buffers
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , faces );
@@ -158,44 +129,12 @@ renderProgram.indexBuffer      = indexBuffer;
 gl.enableVertexAttribArray( renderProgram.vertexPosition );
 gl.enableVertexAttribArray( renderProgram.vertexNormal   );
 
-
-// make the anti aliasing program
-const antiAliasingProgram = makeShaderProgram( gl, vaaShaderSource, faaShaderSource );
-
-const fullScreenQuadFaces = Float32Array.from( [ -1, -1,  0,
-                                                  1, -1,  0,
-                                                  1,  1,  0,
-                                                 -1,  1,  0 ] );
-
-const fullScreenQuadIdxs = Uint32Array.from( [0, 1, 2,
-                                              1, 2, 3] );
-
-// make the fullScreenQuad data buffers
-const fullScreenQuadPositionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , fullScreenQuadFaces );
-const fullScreenQuadIndexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, fullScreenQuadIdxs  );
-
-// set some of the anti aliasing program vars
-antiAliasingProgram.vertexPosition = gl.getAttribLocation(  antiAliasingProgram, 'aVertexPosition' );
-antiAliasingProgram.uSampler       = gl.getUniformLocation( antiAliasingProgram, 'uSampler'        );
-
-antiAliasingProgram.positionBuffer = fullScreenQuadPositionBuffer;
-antiAliasingProgram.indexBuffer    = fullScreenQuadIndexBuffer;
-
-// enable the vertex attributes
-gl.enableVertexAttribArray( antiAliasingProgram.vertexPosition );
-
-gl.useProgram(antiAliasingProgram);
-
-// bind the render texture to the antialiasing shader
-// Tell WebGL we want to affect texture unit 0
-gl.activeTexture(gl.TEXTURE0);
-
-// Bind the texture to texture unit 0
-gl.bindTexture(gl.TEXTURE_2D, renderTexture);
-
-// Tell the shader we bound the texture to texture unit 0
-gl.uniform1i(antiAliasingProgram.uSampler, 0);
-
+// use the render program
+gl.useProgram( renderProgram );
+    
+// use the correct vertex buffers
+useArrayBuffer( gl, renderProgram.vertexPosition, renderProgram.positionBuffer );
+useArrayBuffer( gl, renderProgram.vertexNormal  , renderProgram.normalBuffer   );
 
 // make the geometry
 updateGeometry();

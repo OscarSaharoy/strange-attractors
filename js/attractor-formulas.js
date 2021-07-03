@@ -9,6 +9,10 @@ const fx = (x,y,z) => theta * ( y - x ),
       fy = (x,y,z) => x  * ( rho - z ) - y,
       fz = (x,y,z) => x  * y - beta * z;
 
+const fr = ( [x, y, z] ) => [ theta * ( y - x )   ,
+                              x * ( rho - z ) - y ,
+                              x * y - beta * z    ];
+
 
 // chua
 
