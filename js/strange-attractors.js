@@ -10,8 +10,8 @@ function drawLoop( gl ) {
     updateMatrices();
 
     // draw to the canvas
-    // gl.drawElements( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
-    gl.drawArrays( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
+    gl.drawElements( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
+    // gl.drawArrays( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
 
 
     // run again next frame
