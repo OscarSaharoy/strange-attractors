@@ -46,8 +46,6 @@ function onCanvasResize( gl, canvas, projectionMatrix ) {
     canvas.width  = boundingRect.width  * dpr;
     canvas.height = boundingRect.height * dpr;
 
-    console.log("canvas", canvas.width, canvas.height);
-
     // set clip space to match up to canvas corners
     gl.viewport(0, 0, canvas.width, canvas.height);
     

@@ -1,59 +1,5 @@
 // Oscar Saharoy 2021
 
-function calcPointRK4op( points, i ) {
-
-    // get current x y and z from the points array
-    // and cache the initial values
-    let x = x0 = points[i-1][0],
-        y = y0 = points[i-1][1],
-        z = z0 = points[i-1][2];
-
-    // calculate RK4 intermediate values
-
-    // k1
-
-    const dx1 = fx( x, y, z );
-    const dy1 = fy( x, y, z );
-    const dz1 = fz( x, y, z );
-
-    // k2
-
-    x = x0 + dx1 * dt*0.5;
-    y = y0 + dy1 * dt*0.5;
-    z = z0 + dz1 * dt*0.5;
-
-    const dx2 = fx( x, y, z );
-    const dy2 = fy( x, y, z );
-    const dz2 = fz( x, y, z );
-
-    // k3
-
-    x = x0 + dx2 * dt*0.5;
-    y = y0 + dy2 * dt*0.5;
-    z = z0 + dz2 * dt*0.5;
-
-    const dx3 = fx( x, y, z );
-    const dy3 = fy( x, y, z );
-    const dz3 = fz( x, y, z );
-
-    // k4
-
-    x = x0 + dx3 * dt;
-    y = y0 + dy3 * dt;
-    z = z0 + dz3 * dt;
-
-    const dx4 = fx( x, y, z );
-    const dy4 = fy( x, y, z );
-    const dz4 = fz( x, y, z );
-    
-    // calculate the overall RK4 step, increment initial
-    // x y and z positions and put new position into the array
-    // v += ( k1 + 2*k2 + 2*k3 + k4 ) / 6 * dt
-    points[i] = [ x0 + ( dx1 + 2*dx2 + 2*dx3 + dx4 ) * dt/6 ,
-                  y0 + ( dy1 + 2*dy2 + 2*dy3 + dy4 ) * dt/6 ,
-                  z0 + ( dz1 + 2*dz2 + 2*dz3 + dz4 ) * dt/6 ];
-}
-
 
 function calcPointRK4( points, i ) {
 
@@ -89,6 +35,17 @@ function calcPointRK4( points, i ) {
 
     points[i] = v3add( r0, rk4step );
 }
+
+
+const width = 0.25;
+
+const vertOffsets = [ 
+                      { normal:  width, curve:  0     } ,
+                      { normal:  0    , curve:  width } ,
+                      { normal: -width, curve:  0     } ,
+                      { normal:  0    , curve: -width } 
+
+                    ];
 
 
 function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
@@ -137,29 +94,34 @@ function formFaces( prevVerts, currentVerts ) {
 
     for( let i = 0; i < nQuads; ++i ) {
 
-        const newFace = [ prevVerts[i], prevVerts[i+1], currentVerts[i+1], currentVerts[i] ];
+        const ip = (i+1) % nQuads;
+        const newFace = [ prevVerts[i], prevVerts[ip], currentVerts[ip], currentVerts[i] ];
 
-        faces.push( ...newFace );
+        faces.push( ...newFace.flat() );
     }
 
     return faces;
 }
 
 
-function formNormals( prevVerts, nextVerts ) {
+function formNormals( currentVerts, prevVerts, vertOffsets, tangent, normal, curve ) {
 
     const nQuads  = prevVerts.length;
     const normals = [];
 
     for( let i = 0; i < nQuads; ++i ) {
+        
+        const ip = (i+1) % nQuads;
 
-        const firstFace  = [ prevVerts[i]   , prevVerts[i+1], currentVerts[i]   ];
-        const secondFace = [ currentVerts[i], prevVerts[i+1], currentVerts[i+1] ];
-    
-        faces.push( [firstFace, secondFace].flat(3)  );
+        const toNextVert = v3sub( currentVerts[ip], currentVerts[i] );
+        const normal     = v3norm( v3cross( toNextVert, tangent ) );
+
+        const newNormals = [ normal, normal, normal, normal ];
+
+        normals.push( ...newNormals.flat() );
     }
 
-    return faces;
+    return normals;
 }
 
 
@@ -178,18 +140,11 @@ function formIndices( startIdx, nQuads ) {
 }
 
 
-var vertOffsets = [ { normal:  0.25, curve:  0    } ,
-                    { normal:  0   , curve:  0.25 } ,
-                    { normal:  0   , curve: -0.25 } ,
-                    { normal: -0.25, curve:  0    } ];
-
-
 function insertIntoArray( source, target, start ) {
 
-    for( let i = start; i < start + source.length; ++i ) {
+    for( let i = start; i < start + source.length; ++i )
 
         target[i] = source[i - start];
-    }
 }
 
 
@@ -197,26 +152,13 @@ function calcGeometryData( points, faces, norms, idxs ) {
 
     // first calculate vertices and normal and curve vectors at the second point of points
 
-    const prevPoint    = [ ...points[0] ];
-    const currentPoint = [ ...points[1] ];
-    const nextPoint    = [ ...points[2] ];
+    const [ prevPoint, currentPoint, nextPoint ] = points.slice(0, 3);
 
-    const [prevTangent, prevNormal, prevCurve] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
-
-    let [ prevTangentX, prevTangentY, prevTangentZ ] = prevTangent;
-    let [ prevNormalX , prevNormalY , prevNormalZ  ] = prevNormal ;
-    let [ prevCurveX  , prevCurveY  , prevCurveZ   ] = prevCurve  ;
+    const [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
 
     // calculate vertex positions
 
-    const width = 0.25;
-
-    let [prevTopRight, prevBottomRight, prevTopLeft, prevBottomLeft] = prevVerts = calcVerts( currentPoint, prevNormal, prevCurve, vertOffsets );
-
-    let [ prevTopRightX   , prevTopRightY   , prevTopRightZ    ] = prevTopRight   ;
-    let [ prevBottomRightX, prevBottomRightY, prevBottomRightZ ] = prevBottomRight;
-    let [ prevTopLeftX    , prevTopLeftY    , prevTopLeftZ     ] = prevTopLeft    ;
-    let [ prevBottomLeftX , prevBottomLeftY , prevBottomLeftZ  ] = prevBottomLeft ;
+    let prevVerts = calcVerts( currentPoint, normal, curve, vertOffsets );
 
     // loop over all the points except the first and last
     // and populate the faces, norms and idxs arrays
@@ -224,208 +166,36 @@ function calcGeometryData( points, faces, norms, idxs ) {
     for( let idx = 2; idx < points.length-1; ++idx ) {
 
         // get the previous, current and next points
-
-        const prevPoint    = points[idx-1];
-        const currentPoint = points[idx  ];
-        const nextPoint    = points[idx+1];
+    
+        const [ prevPoint, currentPoint, nextPoint ] = points.slice(idx-1, idx+2);
 
         const [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
-    
-        let [ tangentX, tangentY, tangentZ ] = tangent;
-        let [ normalX , normalY , normalZ  ] = normal ;
-        let [ curveX  , curveY  , curveZ   ] = curve  ;
-
-
-        //          ^ normal
-        //          |
-        //          |
-        //  tangent x ---> curve
-
 
         // calculate vertex positions at current point
 
-        let [ currentTopRight, currentBottomRight, currentTopLeft, currentBottomLeft ] = currentVerts = calcVerts( currentPoint, normal, curve, vertOffsets );
-
-        let [ currentTopRightX   , currentTopRightY   , currentTopRightZ    ] = currentTopRight   ;
-        let [ currentBottomRightX, currentBottomRightY, currentBottomRightZ ] = currentBottomRight;
-        let [ currentTopLeftX    , currentTopLeftY    , currentTopLeftZ     ] = currentTopLeft    ;
-        let [ currentBottomLeftX , currentBottomLeftY , currentBottomLeftZ  ] = currentBottomLeft ;
-
+        let currentVerts = calcVerts( currentPoint, normal, curve, vertOffsets );
 
         // each iteration we push 4 faces each with 4 corners, each corner has 3 components
         // 4*4*3 = 48
         // each face takes 6 indices
         // 4*6 = 24
 
-        let baseIdx    = faces.length/3;
         const faceBase = 48 * (idx-2);
         const idxBase  = 24 * (idx-2);
         const preFaces = 16 * (idx-2);
 
-        const newFaces = formFaces( prevVerts, currentVerts );
-        // insertIntoArray( newFaces, faces, faceBase );
+        const newFaces   = formFaces( prevVerts, currentVerts );
+        insertIntoArray( newFaces, faces, faceBase );
 
-        if( idx==5 ) console.log(newFaces)
+        const newNormals = formNormals( currentVerts, prevVerts, vertOffsets, tangent, normal, curve );
+        insertIntoArray( newNormals, norms, faceBase );
 
-        const newIdxs = formIndices( preFaces, 4 );
+        const newIdxs    = formIndices( preFaces, 4 );
         insertIntoArray( newIdxs, idxs, idxBase );
-
-
-        // left face
-
-        faces[ faceBase      ] = currentTopLeftX ;
-        faces[ faceBase + 1  ] = currentTopLeftY ;
-        faces[ faceBase + 2  ] = currentTopLeftZ ;
-        faces[ faceBase + 3  ] = prevTopLeftX    ;
-        faces[ faceBase + 4  ] = prevTopLeftY    ;
-        faces[ faceBase + 5  ] = prevTopLeftZ    ;
-        faces[ faceBase + 6  ] = prevTopRightX   ;
-        faces[ faceBase + 7  ] = prevTopRightY   ;
-        faces[ faceBase + 8  ] = prevTopRightZ   ;
-        faces[ faceBase + 9  ] = currentTopRightX;
-        faces[ faceBase + 10 ] = currentTopRightY;
-        faces[ faceBase + 11 ] = currentTopRightZ;
-
-        if( idx==5 ) console.log([currentTopLeftX,
-currentTopLeftY,
-currentTopLeftZ,
-prevTopLeftX,
-prevTopLeftY,
-prevTopLeftZ,
-prevTopRightX,
-prevTopRightY,
-prevTopRightZ,
-currentTopRightX,
-currentTopRightY,
-currentTopRightZ])
-   
-        norms[ faceBase      ] = normalX    ;
-        norms[ faceBase + 1  ] = normalY    ;
-        norms[ faceBase + 2  ] = normalZ    ;
-        norms[ faceBase + 3  ] = prevNormalX;
-        norms[ faceBase + 4  ] = prevNormalY;
-        norms[ faceBase + 5  ] = prevNormalZ;
-        norms[ faceBase + 6  ] = prevNormalX;
-        norms[ faceBase + 7  ] = prevNormalY;
-        norms[ faceBase + 8  ] = prevNormalZ;
-        norms[ faceBase + 9  ] = normalX    ;
-        norms[ faceBase + 10 ] = normalY    ;
-        norms[ faceBase + 11 ] = normalZ    ;
-
-        // right face
-
-        faces[ faceBase + 12 ] = currentTopRightX   ;
-        faces[ faceBase + 13 ] = currentTopRightY   ;
-        faces[ faceBase + 14 ] = currentTopRightZ   ;
-        faces[ faceBase + 15 ] = prevTopRightX      ;
-        faces[ faceBase + 16 ] = prevTopRightY      ;
-        faces[ faceBase + 17 ] = prevTopRightZ      ;
-        faces[ faceBase + 18 ] = prevBottomRightX   ;
-        faces[ faceBase + 19 ] = prevBottomRightY   ;
-        faces[ faceBase + 20 ] = prevBottomRightZ   ;
-        faces[ faceBase + 21 ] = currentBottomRightX;
-        faces[ faceBase + 22 ] = currentBottomRightY;
-        faces[ faceBase + 23 ] = currentBottomRightZ;
-   
-        norms[ faceBase + 12 ] = curveX    ;
-        norms[ faceBase + 13 ] = curveY    ;
-        norms[ faceBase + 14 ] = curveZ    ;
-        norms[ faceBase + 15 ] = prevCurveX;
-        norms[ faceBase + 16 ] = prevCurveY;
-        norms[ faceBase + 17 ] = prevCurveZ;
-        norms[ faceBase + 18 ] = prevCurveX;
-        norms[ faceBase + 19 ] = prevCurveY;
-        norms[ faceBase + 20 ] = prevCurveZ;
-        norms[ faceBase + 21 ] = curveX    ;
-        norms[ faceBase + 22 ] = curveY    ;
-        norms[ faceBase + 23 ] = curveZ    ;
-
-        // bottom face
-
-        faces[ faceBase + 24 ] = currentBottomRightX;
-        faces[ faceBase + 25 ] = currentBottomRightY;
-        faces[ faceBase + 26 ] = currentBottomRightZ; 
-        faces[ faceBase + 27 ] = prevBottomRightX   ;
-        faces[ faceBase + 28 ] = prevBottomRightY   ;
-        faces[ faceBase + 29 ] = prevBottomRightZ   ; 
-        faces[ faceBase + 30 ] = prevBottomLeftX    ;
-        faces[ faceBase + 31 ] = prevBottomLeftY    ;
-        faces[ faceBase + 32 ] = prevBottomLeftZ    ; 
-        faces[ faceBase + 33 ] = currentBottomLeftX ;
-        faces[ faceBase + 34 ] = currentBottomLeftY ;
-        faces[ faceBase + 35 ] = currentBottomLeftZ ;
-   
-        norms[ faceBase + 24 ] = -normalX    ;
-        norms[ faceBase + 25 ] = -normalY    ;
-        norms[ faceBase + 26 ] = -normalZ    ; 
-        norms[ faceBase + 27 ] = -prevNormalX;
-        norms[ faceBase + 28 ] = -prevNormalY;
-        norms[ faceBase + 29 ] = -prevNormalZ; 
-        norms[ faceBase + 30 ] = -prevNormalX;
-        norms[ faceBase + 31 ] = -prevNormalY;
-        norms[ faceBase + 32 ] = -prevNormalZ; 
-        norms[ faceBase + 33 ] = -normalX    ;
-        norms[ faceBase + 34 ] = -normalY    ;
-        norms[ faceBase + 35 ] = -normalZ    ;        
-
-        // left face
-
-        faces[ faceBase + 36 ] = currentBottomLeftX;
-        faces[ faceBase + 37 ] = currentBottomLeftY; 
-        faces[ faceBase + 38 ] = currentBottomLeftZ;  
-        faces[ faceBase + 39 ] = prevBottomLeftX   ; 
-        faces[ faceBase + 40 ] = prevBottomLeftY   ; 
-        faces[ faceBase + 41 ] = prevBottomLeftZ   ;  
-        faces[ faceBase + 42 ] = prevTopLeftX      ; 
-        faces[ faceBase + 43 ] = prevTopLeftY      ; 
-        faces[ faceBase + 44 ] = prevTopLeftZ      ; 
-        faces[ faceBase + 45 ] = currentTopLeftX   ; 
-        faces[ faceBase + 46 ] = currentTopLeftY   ; 
-        faces[ faceBase + 47 ] = currentTopLeftZ   ; 
-   
-        norms[ faceBase + 36 ] = -curveX    ;
-        norms[ faceBase + 37 ] = -curveY    ;
-        norms[ faceBase + 38 ] = -curveZ    ;
-        norms[ faceBase + 39 ] = -prevCurveX;
-        norms[ faceBase + 40 ] = -prevCurveY;
-        norms[ faceBase + 41 ] = -prevCurveZ;
-        norms[ faceBase + 42 ] = -prevCurveX;
-        norms[ faceBase + 43 ] = -prevCurveY;
-        norms[ faceBase + 44 ] = -prevCurveZ;
-        norms[ faceBase + 45 ] = -curveX    ;
-        norms[ faceBase + 46 ] = -curveY    ;
-        norms[ faceBase + 47 ] = -curveZ    ;
-
-        // store the normal and curve vectors and vertices for next iteration
-
-        prevNormalX      = normalX;
-        prevNormalY      = normalY;
-        prevNormalZ      = normalZ;
-
-        prevCurveX       = curveX;
-        prevCurveY       = curveY;
-        prevCurveZ       = curveZ;
-
-        prevTopRightX    = currentTopRightX;
-        prevTopRightY    = currentTopRightY;
-        prevTopRightZ    = currentTopRightZ;
-
-        prevBottomRightX = currentBottomRightX;
-        prevBottomRightY = currentBottomRightY;
-        prevBottomRightZ = currentBottomRightZ;
-        
-        prevTopLeftX     = currentTopLeftX;
-        prevTopLeftY     = currentTopLeftY;
-        prevTopLeftZ     = currentTopLeftZ;
-        
-        prevBottomLeftX  = currentBottomLeftX;
-        prevBottomLeftY  = currentBottomLeftY;
-        prevBottomLeftZ  = currentBottomLeftZ;
 
         prevVerts        = currentVerts;
     }
 }
-
 
 
 function calcGeometryDataOp( points, faces, norms, idxs ) {
