@@ -32,7 +32,7 @@ function updateGeometry() {
     points.forEach( p => vec3.sub(p, p, centrePoint) );
 
     // build the geometry from the points
-    calcGeometryData( points, faces, norms, idxs );
+    calcGeometryData( points, faces, norms, idxs, vertOffsets );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, faces );
@@ -79,11 +79,12 @@ function updateMatrices() {
 // calculation variables
 let viewPointRotation = 0;
 const dt      = 5e-3;
-const nPoints = 30000;
+const nPoints = 3000;
 const points  = new Array(nPoints);
 
 // arrays that will contain the strange attractor geometry data
 let nVerts = (nPoints - 3) * 24;
+let verts  = new Float32Array( (nPoints - 3) * 12 );
 let faces  = new Float32Array( (nPoints - 3) * 48 );
 let norms  = new Float32Array( (nPoints - 3) * 48 );
 let idxs   = new Uint32Array(  (nPoints - 3) * 24 );
@@ -103,6 +104,7 @@ const projectionMatrix = mat4.create();
 handleCanvasResize( gl, canvas, projectionMatrix );
 
 // make the data buffers
+const vertBuffer     = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , faces );
 const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );

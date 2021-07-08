@@ -37,14 +37,14 @@ function calcPointRK4( points, i ) {
 }
 
 
-const width = 0.25;
+const width = 1.25;
 
 const vertOffsets = [ 
                       { normal:  width, curve:  0     } ,
                       { normal:  0    , curve:  width } ,
                       { normal: -width, curve:  0     } ,
+                      { normal: -3*width, curve:  0     } ,
                       { normal:  0    , curve: -width } 
-
                     ];
 
 
@@ -148,7 +148,10 @@ function insertIntoArray( source, target, start ) {
 }
 
 
-function calcGeometryData( points, faces, norms, idxs ) {
+function calcGeometryData( points, faces, norms, idxs, vertOffsets ) {
+
+    // the number of edges the profile of the geometry has
+    const profileEdges = vertOffsets.length;
 
     // first calculate vertices and normal and curve vectors at the second point of points
 
@@ -175,14 +178,14 @@ function calcGeometryData( points, faces, norms, idxs ) {
 
         let currentVerts = calcVerts( currentPoint, normal, curve, vertOffsets );
 
-        // each iteration we push 4 faces each with 4 corners, each corner has 3 components
-        // 4*4*3 = 48
+        // each iteration we push some faces each with 4 corners, each corner has 3 components
+        // profileEdges*4*3 = 12*profileEdges
         // each face takes 6 indices
-        // 4*6 = 24
+        // profileEdges*6
 
-        const faceBase = 48 * (idx-2);
-        const idxBase  = 24 * (idx-2);
-        const preFaces = 16 * (idx-2);
+        const faceBase = 12 * profileEdges * (idx-2);
+        const idxBase  = 6  * profileEdges * (idx-2);
+        const preFaces = 4  * profileEdges * (idx-2);
 
         const newFaces   = formFaces( prevVerts, currentVerts );
         insertIntoArray( newFaces, faces, faceBase );
@@ -190,7 +193,7 @@ function calcGeometryData( points, faces, norms, idxs ) {
         const newNormals = formNormals( currentVerts, prevVerts, vertOffsets, tangent, normal, curve );
         insertIntoArray( newNormals, norms, faceBase );
 
-        const newIdxs    = formIndices( preFaces, 4 );
+        const newIdxs    = formIndices( preFaces, profileEdges );
         insertIntoArray( newIdxs, idxs, idxBase );
 
         prevVerts        = currentVerts;
