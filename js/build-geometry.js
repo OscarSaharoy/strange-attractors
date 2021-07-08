@@ -37,17 +37,6 @@ function calcPointRK4( points, i ) {
 }
 
 
-const width = 1.25;
-
-const vertOffsets = [ 
-                      { normal:  width, curve:  0     } ,
-                      { normal:  0    , curve:  width } ,
-                      { normal: -width, curve:  0     } ,
-                      { normal: -3*width, curve:  0     } ,
-                      { normal:  0    , curve: -width } 
-                    ];
-
-
 function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
 
     // calculate the vector tangent to the curve
@@ -73,8 +62,7 @@ function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
 }
 
 
-
-function calcVerts( currentPoint, normal, curve, vertOffsets ) {
+function calcVerts( currentPoint, vertOffsets, normal, curve ) {
 
     // funtion to calculate the vertex position from the vertOffset data
     const offsetVert = vertOffset => v3sum( currentPoint,
@@ -87,36 +75,34 @@ function calcVerts( currentPoint, normal, curve, vertOffsets ) {
 }
 
 
-function formFaces( prevVerts, currentVerts ) {
+function formEdges( currentVerts, profileEdges, sharpEdges=sharpEdges ) {
 
-    const nQuads = prevVerts.length;
-    const faces  = [];
+    const edges  = [];
 
-    for( let i = 0; i < nQuads; ++i ) {
+    for( let i = 0; i < profileEdges; ++i ) {
 
-        const ip = (i+1) % nQuads;
-        const newFace = [ prevVerts[i], prevVerts[ip], currentVerts[ip], currentVerts[i] ];
+        const ip = (i+1) % profileEdges;
+        const newEdge = [ currentVerts[i], sharpEdges ? currentVerts[ip] : [] ];
 
-        faces.push( ...newFace.flat() );
+        edges.push( ...newEdge.flat() );
     }
 
-    return faces;
+    return edges;
 }
 
 
-function formNormals( currentVerts, prevVerts, vertOffsets, tangent, normal, curve ) {
+function formNormals( currentVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges ) {
 
-    const nQuads  = prevVerts.length;
     const normals = [];
 
-    for( let i = 0; i < nQuads; ++i ) {
+    for( let i = 0; i < profileEdges; ++i ) {
         
-        const ip = (i+1) % nQuads;
+        const ip = (i+1) % profileEdges;
 
         const toNextVert = v3sub( currentVerts[ip], currentVerts[i] );
         const normal     = v3norm( v3cross( toNextVert, tangent ) );
 
-        const newNormals = [ normal, normal, normal, normal ];
+        const newNormals = [ normal, sharpEdges ? normal : [] ];
 
         normals.push( ...newNormals.flat() );
     }
@@ -125,13 +111,14 @@ function formNormals( currentVerts, prevVerts, vertOffsets, tangent, normal, cur
 }
 
 
-function formIndices( startIdx, nQuads ) {
+function formIndices( preVerts, profileEdges, sharpEdges=sharpEdges ) {
 
     const idxs = [];
+    const vertIndexStep = 1 + sharpEdges;
 
-    for( let j = 0; j < nQuads; ++j ) {
+    for( let j = 0; j < profileEdges; ++j ) {
 
-        const newIdxs = [0,1,2,0,2,3].map( x => x + startIdx + j*4 );
+        const newIdxs = [ 0, 1, 2*profileEdges, 1, 2*profileEdges+1, 2*profileEdges ].map( x => x + preVerts + j*vertIndexStep );
 
         idxs.push( ...newIdxs );
     }
@@ -148,7 +135,7 @@ function insertIntoArray( source, target, start ) {
 }
 
 
-function calcGeometryData( points, faces, norms, idxs, vertOffsets ) {
+function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=true ) {
 
     // the number of edges the profile of the geometry has
     const profileEdges = vertOffsets.length;
@@ -159,44 +146,50 @@ function calcGeometryData( points, faces, norms, idxs, vertOffsets ) {
 
     const [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
 
-    // calculate vertex positions
+    // calculate first set of vertex positions and insert them
 
-    let prevVerts = calcVerts( currentPoint, normal, curve, vertOffsets );
+    let newVerts     = calcVerts( currentPoint, vertOffsets, normal, curve );
 
-    // loop over all the points except the first and last
-    // and populate the faces, norms and idxs arrays
-    // which will be fed into webgl
+    const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
+    insertIntoArray( newEdges  , verts, 0 );
+
+    const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges );
+    insertIntoArray( newNormals, norms, 0 );
+
+
+    // loop over all the subsequent points except the last
+    // and populate the arrays which will be fed into webgl
     for( let idx = 2; idx < points.length-1; ++idx ) {
 
         // get the previous, current and next points
     
         const [ prevPoint, currentPoint, nextPoint ] = points.slice(idx-1, idx+2);
 
+        // calculate local coordinate basis from curve
+
         const [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
 
         // calculate vertex positions at current point
 
-        let currentVerts = calcVerts( currentPoint, normal, curve, vertOffsets );
+        let newVerts = calcVerts( currentPoint, vertOffsets, normal, curve );
 
-        // each iteration we push some faces each with 4 corners, each corner has 3 components
-        // profileEdges*4*3 = 12*profileEdges
+        // each iteration we push 2 corners of each profile edge, each corner has 3 components
+        // profileEdges*2*3 = 6*profileEdges
         // each face takes 6 indices
         // profileEdges*6
 
-        const faceBase = 12 * profileEdges * (idx-2);
-        const idxBase  = 6  * profileEdges * (idx-2);
-        const preFaces = 4  * profileEdges * (idx-2);
+        const vertBase = 6 * profileEdges * (idx-1) / (2 - sharpEdges);
+        const preVerts = 2 * profileEdges * (idx-2) / (2 - sharpEdges);
+        const idxBase  = 6 * profileEdges * (idx-2);
 
-        const newFaces   = formFaces( prevVerts, currentVerts );
-        insertIntoArray( newFaces, faces, faceBase );
+        const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
+        insertIntoArray( newEdges, verts, vertBase );
 
-        const newNormals = formNormals( currentVerts, prevVerts, vertOffsets, tangent, normal, curve );
-        insertIntoArray( newNormals, norms, faceBase );
+        const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges );
+        insertIntoArray( newNormals, norms, vertBase );
 
-        const newIdxs    = formIndices( preFaces, profileEdges );
+        const newIdxs    = formIndices( preVerts, profileEdges, sharpEdges=sharpEdges );
         insertIntoArray( newIdxs, idxs, idxBase );
-
-        prevVerts        = currentVerts;
     }
 }
 

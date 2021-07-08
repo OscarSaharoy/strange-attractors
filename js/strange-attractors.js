@@ -10,7 +10,7 @@ function drawLoop( gl ) {
     updateMatrices();
 
     // draw to the canvas
-    gl.drawElements( gl.TRIANGLES, nVerts, gl.UNSIGNED_INT, 0 );
+    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
 
     // run again next frame
     requestAnimationFrame( () => drawLoop( gl, renderProgram ) );
@@ -32,10 +32,10 @@ function updateGeometry() {
     points.forEach( p => vec3.sub(p, p, centrePoint) );
 
     // build the geometry from the points
-    calcGeometryData( points, faces, norms, idxs, vertOffsets );
+    calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=sharpEdges );
 
     // fill the buffers with the geometry data
-    fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, faces );
+    fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
     fillBuffer( gl, gl.ARRAY_BUFFER        , normalBuffer  , norms );
     fillBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, indexBuffer   , idxs  );
 }
@@ -79,15 +79,26 @@ function updateMatrices() {
 // calculation variables
 let viewPointRotation = 0;
 const dt      = 5e-3;
-const nPoints = 3000;
+const nPoints = 702;
 const points  = new Array(nPoints);
 
+// controls whether the mesh is rendered with sharp edges
+let sharpEdges = true;
+
 // arrays that will contain the strange attractor geometry data
-let nVerts = (nPoints - 3) * 24;
-let verts  = new Float32Array( (nPoints - 3) * 12 );
-let faces  = new Float32Array( (nPoints - 3) * 48 );
-let norms  = new Float32Array( (nPoints - 3) * 48 );
-let idxs   = new Uint32Array(  (nPoints - 3) * 24 );
+let nVerts = (nPoints - 3) * 8 - 9 * !sharpEdges;
+let verts  = new Float32Array( (nVerts + 8)*3  );
+let norms  = new Float32Array( (nVerts + 8)*3 );
+let idxs   = new Uint32Array(  (nVerts + 8)*3 );
+
+// vertOffsets defines the cross section of the geometry 
+const width = 1;
+const vertOffsets = [ 
+                      { normal:  width, curve:  0     } ,
+                      { normal:  0    , curve:  width } ,
+                      { normal: -width, curve:  0     } ,
+                      { normal:  0    , curve: -width } 
+                    ];
 
 
 // get the webgl drawing context and canvas
@@ -104,8 +115,7 @@ const projectionMatrix = mat4.create();
 handleCanvasResize( gl, canvas, projectionMatrix );
 
 // make the data buffers
-const vertBuffer     = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
-const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , faces );
+const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
 const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );
 
