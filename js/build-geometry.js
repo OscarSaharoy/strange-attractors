@@ -1,13 +1,13 @@
 // Oscar Saharoy 2021
 
 
-function calcPointRK4( points, i ) {
+function calcPointRK4( point ) {
 
     // get current x y and z from the points array
     // and cache the initial values
 
-    let   r  = [ ...points[i-1] ];
-    const r0 = [ ...points[i-1] ];
+    let   r  = point;
+    const r0 = point;
 
     // calculate rk4 intermediate values
 
@@ -33,7 +33,7 @@ function calcPointRK4( points, i ) {
 
     // add the overall rk4 step onto the start position
 
-    points[i] = v3add( r0, rk4step );
+    return v3add( r0, rk4step );
 }
 
 
@@ -148,7 +148,7 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
     // calculate first set of vertex positions and insert them
 
-    let newVerts     = calcVerts( currentPoint, vertOffsets, normal, curve );
+    const newVerts   = calcVerts( currentPoint, vertOffsets, normal, curve );
 
     const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
     insertIntoArray( newEdges  , verts, 0 );
@@ -548,16 +548,20 @@ function getCentrePoint( points ) {
 
     // create 2 vectors to be the minimum
     // and maximum corners of the bounding box
+    let meanXYZ  = v3zero;
     const minXYZ = vec3.create();
     const maxXYZ = vec3.create();
 
     // loop over points and set the minimum and maximum corners
     for( point of points ) {
 
+        meanXYZ = v3add( meanXYZ, point );
+
         vec3.min( minXYZ, minXYZ, point );
         vec3.max( maxXYZ, maxXYZ, point );
     }
 
     // return the centre of the two corners
-    return vec3.lerp( minXYZ, minXYZ, maxXYZ, 0.5 );
+    // return vec3.lerp( minXYZ, minXYZ, maxXYZ, 0.5 );
+    return v3scale( meanXYZ, 1 / points.length );
 }

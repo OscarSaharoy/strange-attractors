@@ -6,6 +6,9 @@ function drawLoop( gl ) {
     // Clear the color and depth data
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
+    // run the pan and zoom routine
+    panAndZoom();
+
     // update the shader matrices
     updateMatrices();
 
@@ -23,7 +26,7 @@ function updateGeometry() {
     points[0] = [-2, -2.5, 20]; //[0.008, 0.1, -0.1];
 
     // construct the points
-    for( let i=1; i<nPoints; ++i ) calcPointRK4(points, i);
+    for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1] );
 
     // get the centre of the points
     const centrePoint = getCentrePoint( points );
@@ -42,10 +45,6 @@ function updateGeometry() {
 
 
 function updateMatrices() {
-
-    // update view matrix
-    viewPointRotation += 0.02;
-    mat4.lookAt(viewMatrix, [90*Math.cos(viewPointRotation), 0, 90*Math.sin(viewPointRotation)], [0,0,0], [0,1,0] );
 
     // update the modelView matrix
     mat4.mul(modelViewMatrix, viewMatrix, modelMatrix);
@@ -75,11 +74,116 @@ function updateMatrices() {
 }
 
 
+// get mean and spread of a list of pointer positions
+const getMeanPointer   = arr => arr.reduce( (acc, val) => v3add( acc, v3scale(val, 1/arr.length ) ), v3zero );
+const getPointerSpread = (positions, mean) => positions.reduce( (acc, val) => acc + ((val[0]-mean[0])**2 + (val[1]-mean[1])**2)**0.5, 0 );
+
+// vars to track panning and zooming
+let activePointers   = [];
+let pointerPositions = {};
+let meanPointer      = [0, 0, 0];
+let lastMeanPointer  = [0, 0, 0];
+let skip1Frame       = false;
+let c = 90;
+
+
+function setPointerMeanAndSpread() {
+
+    // get all the pointer vectors
+    const pointers = Object.values( pointerPositions );
+
+    // use functions to find mean and spread
+    meanPointer    = getMeanPointer( pointers );
+    pointerSpread  = getPointerSpread( pointers, meanPointer );
+}
+
+function pointerdown( event ) {
+
+    event.preventDefault();
+
+    // add the pointer to pointerPositions and activePointers
+    pointerPositions[event.pointerId] = [event.offsetX, -event.offsetY, 0];
+    activePointers.push( event.pointerId );
+
+    // set the mean pointer position so that we have access to the new meanPointer straight away
+    setPointerMeanAndSpread()
+
+    // we added a new pointer so skip a frame to prevent
+    // a step change in pan position
+    skip1Frame = true;
+}
+
+function pointermove( event ) {
+
+    event.preventDefault();
+
+    // if this pointer isn't an active pointer
+    // (pointerdown occured over a preventDrag element)
+    // then do nothing
+    if( !activePointers.includes(event.pointerId) ) return;
+
+    // keep track of the pointer pos
+    pointerPositions[event.pointerId] = [ event.offsetX, -event.offsetY, 0 ];
+}
+
+function pointerup( event ) {
+
+    // remove the pointer from active pointers and pointerPositions
+    // (does nothing if it wasnt in them)
+    activePointers = activePointers.filter( id => id != event.pointerId );
+    delete pointerPositions[event.pointerId];
+
+    // we lost a pointer so skip a frame to prevent
+    // a step change in pan position
+    skip1Frame = true;
+}
+
+function panAndZoom() {
+
+    // if theres no active pointers do nothing
+    if( !activePointers.length ) return;
+
+    // set the mean pointer and spread
+    setPointerMeanAndSpread()
+    
+    // we have to skip a frame when we change number of pointers to avoid a jump
+    if( !skip1Frame ) {
+        
+        // calculate the movement of the mean pointer to use for panning
+        const meanPointerMove = v3sub( meanPointer, lastMeanPointer );
+        const axis = v3cross( [0,0,1], meanPointerMove );
+
+        // rotate the geometry
+        vec3.transformMat4(axis, [...axis, 0], mat4.invert([], modelMatrix) );
+        mat4.rotate( modelMatrix, modelMatrix, v3mod(axis)/100, axis );
+        
+        // call the wheel function with a constructed event to zoom with pinch
+        wheel( { deltaY: (lastPointerSpread - pointerSpread) * 2.7 } );
+    }
+
+    // update the vars to prepare for the next frame
+    lastMeanPointer   = meanPointer;
+    lastPointerSpread = pointerSpread;
+    skip1Frame        = false;
+}
+
+function wheel( event ) {
+
+    // prevent browser from doing anything
+    event.preventDefault?.();
+
+    // adjust the zoom level and update the container
+    const zoomAmount = event.deltaY / 600;
+
+    viewPointDistance *= 1 + zoomAmount;
+    mat4.lookAt(viewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
+}
+
+
 
 // calculation variables
-let viewPointRotation = 0;
 const dt      = 5e-3;
-const nPoints = 702;
+const nPoints = 1002;
 const points  = new Array(nPoints);
 
 // controls whether the mesh is rendered with sharp edges
@@ -104,12 +208,23 @@ const vertOffsets = [
 // get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
 
+// add event listeners to canvas
+canvas.addEventListener( "pointerdown",  pointerdown );
+canvas.addEventListener( "pointerup",    pointerup   );
+canvas.addEventListener( "pointermove",  pointermove );
+canvas.addEventListener( "wheel",        wheel       ); 
+
+
 // create the matrices we need
 const modelMatrix      = mat4.create();
 const viewMatrix       = mat4.create();
 const normalMatrix     = mat4.create();
 const modelViewMatrix  = mat4.create();
 const projectionMatrix = mat4.create();
+
+// setup the viewpoint
+let viewPointDistance = 90;
+mat4.lookAt(viewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
 
 // allow the canvas to handle resizing
 handleCanvasResize( gl, canvas, projectionMatrix );
