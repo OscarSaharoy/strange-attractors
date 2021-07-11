@@ -98,7 +98,7 @@ function setPointerMeanAndSpread() {
     // get all the pointer vectors
     const pointers = Object.values( pointerPositions );
 
-    // use functions to find mean and spread
+    // use functions to find mean and spread and end to end vector (normalised)
     meanPointer    = getMeanPointer( pointers );
     pointerSpread  = getPointerSpread( pointers, meanPointer );
     endToEndVector = v3norm( getEndToEnd( pointers ) );
@@ -165,13 +165,13 @@ function panAndZoom() {
 
         // rotate the geometry
         vec3.transformMat4( axis, axis, invModel );
-        mat4.rotate( modelMatrix, modelMatrix, v3mod(axis) / 150 * dpr, axis );
+        mat4.rotate( modelMatrix, modelMatrix, v3mod(axis) / 150, axis );
         
         // call the wheel function with a constructed event to zoom with pinch
-        wheel( { deltaY: (lastPointerSpread - pointerSpread) * 2 * dpr } );
+        wheel( { deltaY: (lastPointerSpread - pointerSpread) * 2.4 } );
 
         // rotate around the z axis to twist
-        const spinAmount = v3dot( v3cross( lastEndToEndVector, endToEndVector ), [0,0,1.4 * dpr] );
+        const spinAmount = v3dot( v3cross( lastEndToEndVector, endToEndVector ), [0,0,1.4] );
         vec3.transformMat4( axis, [0,0,1], invModel );
         mat4.rotate( modelMatrix, modelMatrix, spinAmount, axis );
     }
@@ -224,8 +224,6 @@ const vertOffsets = [
 
 // get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
-
-const dpr = window.devicePixelRatio | 1;
 
 // add event listeners to canvas
 canvas.addEventListener( "pointerdown",  pointerdown );

@@ -546,22 +546,9 @@ function calcGeometryDataOp( points, faces, norms, idxs ) {
 
 function getCentrePoint( points ) {
 
-    // create 2 vectors to be the minimum
-    // and maximum corners of the bounding box
-    let meanXYZ  = v3zero;
-    const minXYZ = vec3.create();
-    const maxXYZ = vec3.create();
+    // calculate the sum of all the points
+    let pointsSum = points.reduce( (acc,val) => v3add(acc,val), v3zero );
 
-    // loop over points and set the minimum and maximum corners
-    for( point of points ) {
-
-        meanXYZ = v3add( meanXYZ, point );
-
-        vec3.min( minXYZ, minXYZ, point );
-        vec3.max( maxXYZ, maxXYZ, point );
-    }
-
-    // return the centre of the two corners
-    // return vec3.lerp( minXYZ, minXYZ, maxXYZ, 0.5 );
-    return v3scale( meanXYZ, 1 / points.length );
+    // return the average point to approximate the centre of mass
+    return v3scale( pointsSum, 1 / points.length );
 }

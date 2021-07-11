@@ -19,10 +19,9 @@ void main() {
 
     gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
 
-    highp vec3 directionalLightColor = vec3(0.8, 0.97, 1);
-    highp vec3 directionalVector     = normalize(vec3(0.85, 0.8, 0.75));
-    highp vec3 diffuseColour         = vec3(245.0/255.0, 244.0/255.0, 240.0/255.0 );
-    highp vec4 transformedNormal     = uNormalMatrix * vec4(aVertexNormal, 1.0);
+    highp vec3 directionalVector = normalize(vec3(1, 1, 1));
+    highp vec3 diffuseColour     = vec3(245.0/255.0, 244.0/255.0, 240.0/255.0 );
+    highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
 
     highp float directional = dot(transformedNormal.xyz, directionalVector) * 0.2 + 0.75;
     vLighting = vec4( diffuseColour * directional, 1.0 );
