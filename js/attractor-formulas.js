@@ -1,61 +1,60 @@
 
 // lorenz
 
-let rho   = 28, 
-    theta = 10,
-    beta  = 8/3;
+let rho_lorenz   = 28, 
+    theta_lorenz = 10,
+    beta_lorenz  = 8/3;
 
-const fx = (x,y,z) => theta * ( y - x ),
-      fy = (x,y,z) => x  * ( rho - z ) - y,
-      fz = (x,y,z) => x  * y - beta * z;
-
-const fr = ( [x, y, z] ) => [ theta * ( y - x )   ,
-                              x * ( rho - z ) - y ,
-                              x * y - beta * z    ];
-
+const fr_lorenz = ([x,y,z]) => [ theta_lorenz * ( y - x )   ,
+                                 x * ( rho_lorenz - z ) - y ,
+                                 x * y - beta_lorenz * z    ];
 
 // chua
 
-// let a = 40, 
-//     b = 3,
-//     c = 28;
+let a_chua = 40, 
+    b_chua = 3,
+    c_chua = 28;
 
-// const fx = (x,y,z) => a * ( y - x ),
-//       fy = (x,y,z) => (c-a) * x - x*z + c*y,
-//       fz = (x,y,z) => x*y - b*z;
+const fx = (x,y,z) => a_chua * ( y - x ),
+      fy = (x,y,z) => (c_chua-a_chua) * x - x*z + c_chua*y,
+      fz = (x,y,z) => x*y - b_chua*z;
 
+const fr_chua = ([x,y,z]) => [ a_chua * ( y - x )                  ,
+                              (c_chua-a_chua) * x - x*z + c_chua*y ,
+                               x*y - b_chua*z                      ];
 
 // lu chen
 
-// let a = 36, 
-//     b = 3,
-//     c = 20,
-//     u = -15.15;
+let a_lu_chen = 36, 
+    b_lu_chen = 3,
+    c_lu_chen = 20,
+    u_lu_chen = -15.15;
 
-// const fx = (x,y,z) => a * ( y - x ),
-//       fy = (x,y,z) => x - x*z + c*y + u,
-//       fz = (x,y,z) => x*y - b*z;
-
+const fr_lu_chen = ([x,y,z]) => [ a_lu_chen * ( y - x )             ,
+                                  x - x*z + c_lu_chen*y + u_lu_chen ,
+                                  x*y - b_lu_chen*z                 ];
 
 // rossler
 
-// let a = 0.1, 
-//     b = 0.1,
-//     c = 17;
+let a_rossler = 0.1, 
+    b_rossler = 0.1,
+    c_rossler = 17;
 
-// const fx = (x,y,z) => - y - z,
-//       fy = (x,y,z) => b + y * (x-c),
-//       fz = (x,y,z) => x + a*z;
+const fr_rossler = ([x,y,z]) => [ - y - z                       ,
+                                  b_rossler + y * (x-c_rossler) ,
+                                  x + a_rossler*z               ];
 
 // aizawa
 
-// let a = 0.9, 
-//     b = 0.7,
-//     c = 0.6,
-//     d = 3.5,
-// 	e = 0.25,
-// 	f = 0.1;
+let a_aizawa = 0.9, 
+    b_aizawa = 0.7,
+    c_aizawa = 0.6,
+    d_aizawa = 3.5,
+	e_aizawa = 0.25,
+	f_aizawa = 0.1;
 
-// const fx = (x,y,z) => (z-b) * x - d*y,
-//       fy = (x,y,z) => d*x + (z-b) * y,
-//       fz = (x,y,z) => c + a*z - z**3/3 - (x**2 + y**2) * (1 + e*z) + f*z*x**3;
+const fr_aizawa = ([x,y,z]) => [ (z-b_aizawa) * x - d_aizawa*y ,
+                                 d_aizawa*x + (z-b_aizawa) * y ,
+                                 c_aizawa + a_aizawa*z - z**3/3 - (x**2 + y**2) * (1 + e_aizawa*z) + f_aizawa*z*x**3 ];
+
+const fr = fr_lorenz;

@@ -34,4 +34,5 @@ body {
 	height: 100vh;
 	grid-row: 1;
 	grid-column: 1;
+	touch-action: none;
 }

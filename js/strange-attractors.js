@@ -23,7 +23,7 @@ function drawLoop( gl ) {
 function updateGeometry() {
 
     // set the start point for the attractor path
-    points[0] = [-2, -2.5, 20]; //[0.008, 0.1, -0.1];
+    points[0] = start;
 
     // construct the points
     for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1] );
@@ -77,14 +77,20 @@ function updateMatrices() {
 // get mean and spread of a list of pointer positions
 const getMeanPointer   = arr => arr.reduce( (acc, val) => v3add( acc, v3scale(val, 1/arr.length ) ), v3zero );
 const getPointerSpread = (positions, mean) => positions.reduce( (acc, val) => acc + ((val[0]-mean[0])**2 + (val[1]-mean[1])**2)**0.5, 0 );
+const getPointerTwist  = (positions, mean) => positions.reduce( (acc, val) => acc + v3mod( v3cross( [0,1,0], v3sub(val, mean) ) ), 0 );
+const getPositionDiffs = positions => positions.slice(1).map( (val,i) => v3sub( val, positions[i] ) ); 
+const getEndToEnd      = positions => getPositionDiffs( positions ).reduce( (acc,val) => v3add(acc, val), v3zero );
 
 // vars to track panning and zooming
-let activePointers   = [];
-let pointerPositions = {};
-let meanPointer      = [0, 0, 0];
-let lastMeanPointer  = [0, 0, 0];
-let skip1Frame       = false;
-let c = 90;
+let activePointers     = [];
+let pointerPositions   = {};
+let meanPointer        = v3zero;
+let lastMeanPointer    = v3zero;
+let pointerSpread      = 0;
+let lastPointerSpread  = 0;
+let endToEndVector     = v3zero;
+let lastEndToEndVector = v3zero;
+let skip1Frame         = false;
 
 
 function setPointerMeanAndSpread() {
@@ -92,9 +98,10 @@ function setPointerMeanAndSpread() {
     // get all the pointer vectors
     const pointers = Object.values( pointerPositions );
 
-    // use functions to find mean and spread
+    // use functions to find mean and spread and end to end vector (normalised)
     meanPointer    = getMeanPointer( pointers );
     pointerSpread  = getPointerSpread( pointers, meanPointer );
+    endToEndVector = v3norm( getEndToEnd( pointers ) );
 }
 
 function pointerdown( event ) {
@@ -144,27 +151,36 @@ function panAndZoom() {
     if( !activePointers.length ) return;
 
     // set the mean pointer and spread
-    setPointerMeanAndSpread()
+    setPointerMeanAndSpread();
     
     // we have to skip a frame when we change number of pointers to avoid a jump
     if( !skip1Frame ) {
-        
+
+        // calculate inverse model matrix (rotation matrix)
+        const invModel = mat4.transpose(new Array(16), modelMatrix);
+
         // calculate the movement of the mean pointer to use for panning
         const meanPointerMove = v3sub( meanPointer, lastMeanPointer );
         const axis = v3cross( [0,0,1], meanPointerMove );
 
         // rotate the geometry
-        vec3.transformMat4( axis, axis, mat4.transpose(new Array(16), modelMatrix) );
-        mat4.rotate( modelMatrix, modelMatrix, v3mod(axis)/100, axis );
+        vec3.transformMat4( axis, axis, invModel );
+        mat4.rotate( modelMatrix, modelMatrix, v3mod(axis) / 150, axis );
         
         // call the wheel function with a constructed event to zoom with pinch
-        wheel( { deltaY: (lastPointerSpread - pointerSpread) * 2.7 } );
+        wheel( { deltaY: (lastPointerSpread - pointerSpread) * 2.4 } );
+
+        // rotate around the z axis to twist
+        const spinAmount = v3dot( v3cross( lastEndToEndVector, endToEndVector ), [0,0,1.4] );
+        vec3.transformMat4( axis, [0,0,1], invModel );
+        mat4.rotate( modelMatrix, modelMatrix, spinAmount, axis );
     }
 
     // update the vars to prepare for the next frame
-    lastMeanPointer   = meanPointer;
-    lastPointerSpread = pointerSpread;
-    skip1Frame        = false;
+    lastMeanPointer    = meanPointer;
+    lastPointerSpread  = pointerSpread;
+    lastEndToEndVector = endToEndVector;
+    skip1Frame         = false;
 }
 
 function wheel( event ) {
@@ -183,7 +199,8 @@ function wheel( event ) {
 
 // calculation variables
 const dt      = 5e-3;
-const nPoints = 1002;
+const nPoints = 5002;
+const start   = [ 1, 0.1, 0.8 ];
 const points  = new Array(nPoints);
 
 // controls whether the mesh is rendered with sharp edges
@@ -195,8 +212,8 @@ let verts  = new Float32Array( (nVerts + 8)*3  );
 let norms  = new Float32Array( (nVerts + 8)*3 );
 let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 
-// vertOffsets defines the cross section of the geometry
-const width = 1;
+// vertOffsets defines the cross section of the geometry 
+const width = 0.5;
 const vertOffsets = [ 
                       { normal:  width, curve:  0     } ,
                       { normal:  0    , curve:  width } ,
