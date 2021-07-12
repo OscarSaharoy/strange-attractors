@@ -154,7 +154,7 @@ function panAndZoom() {
         const axis = v3cross( [0,0,1], meanPointerMove );
 
         // rotate the geometry
-        vec3.transformMat4(axis, [...axis, 0], mat4.invert([], modelMatrix) );
+        vec3.transformMat4( axis, axis, mat4.transpose(new Array(16), modelMatrix) );
         mat4.rotate( modelMatrix, modelMatrix, v3mod(axis)/100, axis );
         
         // call the wheel function with a constructed event to zoom with pinch
@@ -195,7 +195,7 @@ let verts  = new Float32Array( (nVerts + 8)*3  );
 let norms  = new Float32Array( (nVerts + 8)*3 );
 let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 
-// vertOffsets defines the cross section of the geometry 
+// vertOffsets defines the cross section of the geometry
 const width = 1;
 const vertOffsets = [ 
                       { normal:  width, curve:  0     } ,

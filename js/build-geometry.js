@@ -137,6 +137,8 @@ function insertIntoArray( source, target, start ) {
 
 function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=true ) {
 
+    // todo: add end caps & prevent vertex loops intersecting when curvature of path is large
+
     // the number of edges the profile of the geometry has
     const profileEdges = vertOffsets.length;
 
