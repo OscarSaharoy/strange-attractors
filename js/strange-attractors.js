@@ -207,8 +207,8 @@ const points  = new Array(nPoints);
 let sharpEdges = true;
 
 // arrays that will contain the strange attractor geometry data
-let nVerts = (nPoints - 3) * 8 - 9 * !sharpEdges;
-let verts  = new Float32Array( (nVerts + 8)*3  );
+let nVerts = (nPoints - 3) * 8 - 9 * !sharpEdges; // todo need to correct this
+let verts  = new Float32Array( (nVerts + 8)*3 );
 let norms  = new Float32Array( (nVerts + 8)*3 );
 let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 
@@ -220,6 +220,8 @@ const vertOffsets = [
                       { normal: -width, curve:  0     } ,
                       { normal:  0    , curve: -width } 
                     ];
+
+const vertOffsets1 = ( n => new Array(n).fill(null).map( (val,i) => 6.28*i/n ).map( x => ({normal: width*Math.cos(x), curve: width*Math.sin(x)}) ) )(10);
 
 
 // get the webgl drawing context and canvas
