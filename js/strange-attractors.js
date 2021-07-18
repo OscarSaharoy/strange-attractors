@@ -35,7 +35,7 @@ function updateGeometry() {
     points.forEach( p => vec3.sub(p, p, centrePoint) );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
@@ -53,7 +53,18 @@ function updateMatrices() {
     mat4.invert(normalMatrix, modelViewMatrix);
     mat4.transpose(normalMatrix, normalMatrix);
 
-    // put all the matrices into the shader program
+    // put all the uniforms into the shader program
+
+    gl.uniform3f(
+        renderProgram.viewPos,
+        0,0,viewPointDistance
+    );
+
+    gl.uniform3f(
+        renderProgram.sunPos,
+        100, 100, 100
+    );
+
     gl.uniformMatrix4fv(
         renderProgram.projectionMatrix,
         false,
@@ -91,6 +102,7 @@ let lastPointerSpread  = 0;
 let endToEndVector     = v3zero;
 let lastEndToEndVector = v3zero;
 let skip1Frame         = false;
+let t = 0;
 
 
 function setPointerMeanAndSpread() {
@@ -109,7 +121,7 @@ function pointerdown( event ) {
     event.preventDefault();
 
     // add the pointer to pointerPositions and activePointers
-    pointerPositions[event.pointerId] = [event.offsetX, -event.offsetY, 0];
+    pointerPositions[event.pointerId] = [event.pageX, -event.pageY, 0];
     activePointers.push( event.pointerId );
 
     // set the mean pointer position so that we have access to the new meanPointer straight away
@@ -130,7 +142,7 @@ function pointermove( event ) {
     if( !activePointers.includes(event.pointerId) ) return;
 
     // keep track of the pointer pos
-    pointerPositions[event.pointerId] = [ event.offsetX, -event.offsetY, 0 ];
+    pointerPositions[event.pointerId] = [ event.pageX, -event.pageY, 0 ];
 }
 
 function pointerup( event ) {
@@ -186,7 +198,9 @@ function panAndZoom() {
 function wheel( event ) {
 
     // prevent browser from doing anything
-    event.preventDefault?.();
+    // event.preventDefault?.();
+
+    // if( event.target != document.body ) return;
 
     // adjust the zoom level and update the container
     const zoomAmount = event.deltaY / 600;
@@ -199,21 +213,21 @@ function wheel( event ) {
 
 // calculation variables
 const dt      = 5e-3;
-const nPoints = 5002;
-const start   = [ 1, 0.1, 0.8 ];
+const nPoints = 3502;
+const start   = [ 0.1, -0.1, 8.8 ];
 const points  = new Array(nPoints);
 
 // controls whether the mesh is rendered with sharp edges
 let sharpEdges = true;
 
 // arrays that will contain the strange attractor geometry data
-let nVerts = (nPoints - 3) * 8 - 9 * !sharpEdges; // todo need to correct this
+let nVerts = (nPoints - 3) * 8 * 23/4 - 9 * !sharpEdges; // todo need to correct this
 let verts  = new Float32Array( (nVerts + 8)*3 );
 let norms  = new Float32Array( (nVerts + 8)*3 );
 let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 
 // vertOffsets defines the cross section of the geometry 
-const width = 0.5;
+const width = 1;
 const vertOffsets = [ 
                       { normal:  width, curve:  0     } ,
                       { normal:  0    , curve:  width } ,
@@ -223,15 +237,40 @@ const vertOffsets = [
 
 const vertOffsets1 = ( n => new Array(n).fill(null).map( (val,i) => 6.28*i/n ).map( x => ({normal: width*Math.cos(x), curve: width*Math.sin(x)}) ) )(10);
 
+const vertOffsets2 = [ 
+                      { normal: -0.619*width, curve:  0.904*width } ,
+                      { normal: -0.588*width, curve:  0.809*width } ,
+                      { normal: -0.951*width, curve:  0.309*width } ,
+                      { normal: -1.051*width, curve:  0.309*width } ,
+
+                      { normal: -1.051*width, curve: -0.309*width } ,
+                      { normal: -0.951*width, curve: -0.309*width } ,
+                      { normal: -0.588*width, curve: -0.809*width } ,
+                      { normal: -0.619*width, curve: -0.904*width } ,
+
+                      { normal: -0.031*width, curve: -1.095*width } ,
+                      { normal:  0.000*width, curve: -1.000*width } ,
+                      { normal:  0.588*width, curve: -0.809*width } ,
+                      { normal:  0.669*width, curve: -0.868*width } ,
+                      { normal:  1.032*width, curve: -0.368*width } , 
+                      { normal:  0.951*width, curve: -0.309*width } , 
+
+                      { normal:  0.951*width, curve:  0.309*width } , 
+                      { normal:  1.032*width, curve:  0.368*width } , 
+                      { normal:  0.669*width, curve:  0.868*width } ,
+                      { normal:  0.588*width, curve:  0.809*width } ,
+                      { normal:  0.000*width, curve:  1.000*width } ,
+                      { normal: -0.031*width, curve:  1.095*width } ,
+                    ];
 
 // get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
 
 // add event listeners to canvas
-canvas.addEventListener( "pointerdown",  pointerdown );
-canvas.addEventListener( "pointerup",    pointerup   );
-canvas.addEventListener( "pointermove",  pointermove );
-canvas.addEventListener( "wheel",        wheel       ); 
+document.body.addEventListener( "pointerdown",  pointerdown );
+document.body.addEventListener( "pointerup",    pointerup   );
+document.body.addEventListener( "pointermove",  pointermove );
+document.body.addEventListener( "wheel",        wheel       ); 
 
 
 // create the matrices we need
@@ -261,9 +300,11 @@ const renderProgram = makeShaderProgram( gl, vsSource, fsSource );
 renderProgram.vertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
 renderProgram.vertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
 
+renderProgram.viewPos          = gl.getUniformLocation( renderProgram, 'viewPos'           );
+renderProgram.sunPos           = gl.getUniformLocation( renderProgram, 'sunPos'            );
+renderProgram.normalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
 renderProgram.projectionMatrix = gl.getUniformLocation( renderProgram, 'uProjectionMatrix' );
 renderProgram.modelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
-renderProgram.normalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
 
 renderProgram.positionBuffer   = positionBuffer;
 renderProgram.normalBuffer     = normalBuffer;

@@ -5,6 +5,7 @@
 	letter-spacing: 0.04rem;
 	user-select: none;
 	box-sizing: border-box;
+	--grey: #222;
 }
 
 body {
@@ -12,21 +13,7 @@ body {
 	width:  100vw;
 	height: 100vh;
 	overflow: hidden;
-}
-
-#container {
-	display: grid;
-	width:  100vw;
-	height: 100vh;
-	align-content: center;
-}
-
-#title {
-	justify-self: center;
-	margin-top: 8rem;
-	grid-row: 1;
-	grid-column: 1;
-	font-size: 5rem;
+	background: ghostwhite;
 }
 
 #glcanvas {
@@ -35,4 +22,83 @@ body {
 	grid-row: 1;
 	grid-column: 1;
 	touch-action: none;
+	pointer-events: none;
+}
+
+#ui {
+    direction: rtl;
+	width: 42rem;
+	height: 100vh;
+	grid-row: 1;
+	grid-column: 1;
+	padding: 6rem 0 0 6rem;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	overflow-y: auto;
+	overflow-x: visible;
+	color:  var(--grey);
+}
+
+/* remove scrollbar code
+
+#ui::-webkit-scrollbar {
+ 	display: none;
+}
+
+#ui {
+ 	-ms-overflow-style: none;
+ 	scrollbar-width:    none; 
+}*/
+
+#ui-top {
+	display: grid;
+    direction:ltr;
+}
+
+h1 {
+	font-size: 3rem;
+}
+
+#recalculate {
+	margin-top: 2rem;
+	background: var(--grey);
+	color: white;
+	border-radius: 0.29rem;
+	cursor: pointer;
+	width: min-content;
+	font-weight: 500;
+	padding: 0.7rem 1rem;
+	text-align: center;
+}
+
+h2 {
+	margin: 1.6rem 0 0.8rem 0;
+}
+
+p {
+	font-size: 1.2rem;
+}
+
+.three-column {
+	display: grid;
+	grid-template-columns: auto auto 1fr;
+	grid-gap: 0.25rem;
+}
+
+#space-filler {
+    direction:ltr;
+	height: 100%;
+	display: grid;
+}
+
+#github-link, #github-link:visited {
+	margin: 5rem 0 5rem 0;
+	text-decoration: none;
+	align-self: end;
+	font-size: 1.4rem;
+	color: #26aeb5;
+}
+
+#github-link:focus {
+	outline: none;
 }

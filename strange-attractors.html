@@ -12,13 +12,55 @@
 
 <body>
 
-<canvas id="glcanvas"> </canvas>
+
+
 
 <div id="ui">
 	
+	<div id="ui-top">
+
+		<h1> strange attractors </h1>
+
+		<h2> preset </h2>
+		<p> lorenz </p>
+
+		<h2> equations </h2>
+		<div class="three-column">
+			<p> dx/dt </p>  <p> = </p> <p></p>
+			<p> dy/dt </p>  <p> = </p> <p></p>
+			<p> dz/dt </p>  <p> = </p> <p></p>
+		</div>
+
+		<h2> constants </h2>
+		<div class="three-column">
+			<p> a </p>  <p> = </p> <p></p>
+			<p> b </p>  <p> = </p> <p></p>
+			<p> c </p>  <p> = </p> <p></p>
+			<p> d </p>  <p> = </p> <p></p>
+			<p> e </p>  <p> = </p> <p></p>
+			<p> f </p>  <p> = </p> <p></p>
+		</div>
+
+		<h2> start position </h2>
+		<p> [ x, y, z ] </p>
+
+		<h2> points </h2>
+		<p> 4000 </p>
+
+		<h2> step size </h2>
+		<p> 5e-3 </p>
+
+		<p id="recalculate"> recalculate </p>
+
+	</div>
 	
+	<div id="space-filler">
+		<a id="github-link" href="https://github.com/OscarSaharoy"> @OscarSaharoy on github </a>
+	</div>
+
 </div>
 
+<canvas id="glcanvas"> </canvas>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"> </script>
 

@@ -7,11 +7,18 @@ function initgl( canvasID ) {
     const canvas = document.getElementById( canvasID );
     const gl     = canvas.getContext("webgl");
 
+
     // try to enable the uint index extension to allow more verts
     if( !gl.getExtension('OES_element_index_uint') )
         
         // if its not supported give an error message
         return console.log( "WebGL extension OES_element_index_uint not supported :(" );
+
+
+    if( !gl.getExtension('WEBGL_depth_texture') )
+
+        return console.log( "WebGL extension WEBGL_depth_texture not supported :( shadows are off" );
+
 
     // set the background to transparent
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -51,9 +58,9 @@ function onCanvasResize( gl, canvas, projectionMatrix ) {
     
     // match the projection matrix to the current aspect ratio
     const fieldOfView = 45 * Math.PI / 180;
-    const aspect = canvas.width / canvas.height;
-    const zNear  = 1;
-    const zFar   = 1000.0;
+    const aspect  = canvas.width / canvas.height;
+    const zNear   = 1;
+    const zFar    = 1000.0;
 
     mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 }
@@ -117,8 +124,6 @@ function createBuffer( gl, target, dataArray ) {
 
 
 function createFramebuffer( gl, width, height ) {
-
-    console.log("framebuffer", width, height);
 
     // create the framebuffer
     const framebuffer = gl.createFramebuffer();
