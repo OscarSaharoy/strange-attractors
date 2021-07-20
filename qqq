@@ -1,0 +1,110 @@
+[1mdiff --git a/js/strange-attractors.js b/js/strange-attractors.js[m
+[1mindex ee20052..7dbc0d3 100644[m
+[1m--- a/js/strange-attractors.js[m
+[1m+++ b/js/strange-attractors.js[m
+[36m@@ -81,8 +81,7 @@[m [mfunction updateMatrices() {[m
+     );[m
+ [m
+ [m
+[31m-[m
+[31m-    // update the modelSunViewMatrix matrix[m
+[32m+[m[32m    // update the modelSunView matrix[m
+     mat4.mul( uModelSunViewMatrix, uSunViewMatrix, uModelMatrix );[m
+ [m
+     gl.uniform3f([m
+[36m@@ -91,13 +90,13 @@[m [mfunction updateMatrices() {[m
+     );[m
+ [m
+     gl.uniformMatrix4fv([m
+[31m-        renderProgram.uModelSunViewMatrix,[m
+[31m-        false, uModelSunViewMatrix[m
+[32m+[m[32m        shadowMapProgram.uSunProjectionMatrix,[m
+[32m+[m[32m        false, uPSunrojectionMatrix[m
+     );[m
+ [m
+     gl.uniformMatrix4fv([m
+[31m-        renderProgram.uSunProjectionMatrix,[m
+[31m-        false, uSunProjectionMatrix[m
+[32m+[m[32m        shadowMapProgram.uModelSunViewMatrix,[m
+[32m+[m[32m        false, uModelSunViewMatrix[m
+     );[m
+ }[m
+ [m
+[36m@@ -122,8 +121,8 @@[m [mfunction makeRenderProgram() {[m
+     renderProgram.indexBuffer       = indexBuffer;[m
+ [m
+     // enable the vertex attributes[m
+[31m-    gl.enableVertexAttribArray( renderProgram.vertexPosition );[m
+[31m-    gl.enableVertexAttribArray( renderProgram.vertexNormal   );[m
+[32m+[m[32m    gl.enableVertexAttribArray( renderProgram.aVertexPosition );[m
+[32m+[m[32m    gl.enableVertexAttribArray( renderProgram.aVertexNormal   );[m
+ [m
+     return renderProgram;[m
+ }[m
+[36m@@ -136,15 +135,16 @@[m [mfunction makeShadowMapProgram() {[m
+ [m
+     // set vars in the shadow map program[m
+     shadowMapProgram.uSunPos              = gl.getUniformLocation( shadowMapProgram, 'uSunPos'              );[m
+[31m-    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );[m
+     shadowMapProgram.uSunProjectionMatrix = gl.getUniformLocation( shadowMapProgram, 'uSunProjectionMatrix' );[m
+[32m+[m[32m    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );[m
+[32m+[m
+[32m+[m[32m    shadowMapProgram.aVertexPosition      = gl.getAttribLocation(  shadowMapProgram, 'aVertexPosition' );[m
+ [m
+[31m-    shadowMapProgram.positionBuffer = positionBuffer;[m
+[31m-    shadowMapProgram.indexBuffer    = indexBuffer;[m
+[32m+[m[32m    shadowMapProgram.positionBuffer       = positionBuffer;[m
+[32m+[m[32m    shadowMapProgram.indexBuffer          = indexBuffer;[m
+ [m
+     // enable the vertex attributes[m
+[31m-    gl.enableVertexAttribArray( shadowMapProgram.vertexPosition );[m
+[31m-    gl.enableVertexAttribArray( shadowMapProgram.vertexNormal   );[m
+[32m+[m[32m    gl.enableVertexAttribArray( shadowMapProgram.aVertexPosition );[m
+ [m
+     return shadowMapProgram;[m
+ }[m
+[36m@@ -227,14 +227,14 @@[m [mlet idxs   = new Uint32Array(  (nVerts + 8)*3 );[m
+ const [gl, canvas] = initgl( "glcanvas" );[m
+ [m
+ // create the matrices we need[m
+[31m-const uModelMatrix         = mat4.create(); // both programs[m
+[32m+[m[32mconst uModelMatrix         = mat4.create();[m
+ [m
+[31m-const uViewMatrix          = mat4.create(); // render program[m
+[32m+[m[32mconst uViewMatrix          = mat4.create();[m
+ const uModelViewMatrix     = mat4.create();[m
+ const uProjectionMatrix    = mat4.create();[m
+ const uNormalMatrix        = mat4.create();[m
+ [m
+[31m-const uSunViewMatrix       = mat4.create(); // shadow map program[m
+[32m+[m[32mconst uSunViewMatrix       = mat4.create();[m
+ const uModelSunViewMatrix  = mat4.create();[m
+ const uSunProjectionMatrix = mat4.create();[m
+ [m
+[36m@@ -243,11 +243,9 @@[m [mconst positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , verts );[m
+ const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );[m
+ const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );[m
+ [m
+[31m-// setup the viewpoint[m
+[32m+[m[32m// setup the viewpoint and sun viewpoint[m
+ let viewPointDistance  = 90;[m
+ mat4.lookAt( uViewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );[m
+[31m-[m
+[31m-// setup the sun's viewpoint[m
+ mat4.lookAt( uSunViewMatrix, [100,100,100], [0,0,0], [0,1,0] );[m
+ [m
+ // allow the canvas to handle resizing[m
+[36m@@ -259,10 +257,10 @@[m [mconst shadowMapProgram = makeShadowMapProgram();[m
+ // make and use the render program[m
+ const renderProgram = makeRenderProgram();[m
+ gl.useProgram( renderProgram );[m
+[31m-[m
+[32m+[m[41m    [m
+ // use the correct vertex buffers[m
+[31m-useArrayBuffer( gl, renderProgram.vertexPosition, renderProgram.positionBuffer );[m
+[31m-useArrayBuffer( gl, renderProgram.vertexNormal  , renderProgram.normalBuffer   );[m
+[32m+[m[32museArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );[m
+[32m+[m[32museArrayBuffer( gl, renderProgram.aVertexNormal  , renderProgram.normalBuffer   );[m
+ [m
+ // make the geometry[m
+ updateGeometry();[m

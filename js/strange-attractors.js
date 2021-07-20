@@ -3,20 +3,40 @@
 
 function drawLoop( gl ) {
 
-    // Clear the color and depth data
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-
-    // run the pan and zoom routine
+    // run the pan and zoom routine (canvas-control.js)
     panAndZoom();
 
-    // update the shader matrices
-    updateMatrices();
+    // bind and clear the shadow map framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, shadowMapDepthFramebuffer );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
-    // draw to the canvas
+    // use the shadow map program and update its uniforms
+    gl.useProgram(shadowMapProgram);
+    updateShadowMapProgramUniforms();
+
+    // render the shadow map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+
+
+    renderScene();
 
     // run again next frame
     requestAnimationFrame( () => drawLoop( gl ) );
+}
+
+
+function renderScene() {
+
+    // bind and clear the canvas framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+    // use the render program and update its uniforms
+    gl.useProgram(renderProgram);
+    updateRenderProgramUniforms();
+
+    // draw to the canvas
+    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
 }
 
 
@@ -44,7 +64,7 @@ function updateGeometry() {
 }
 
 
-function updateMatrices() {
+function updateRenderProgramUniforms() {
 
     // update the modelView matrix
     mat4.mul( uModelViewMatrix, uViewMatrix, uModelMatrix );
@@ -53,16 +73,16 @@ function updateMatrices() {
     mat4.invert( uNormalMatrix, uModelViewMatrix );
     mat4.transpose( uNormalMatrix, uNormalMatrix );
 
-    // put all the uniforms into the shader program
+    // put all the uniforms into the render program
 
-    gl.uniform3f(
+    gl.uniform3fv(
         renderProgram.uViewPos,
-        0,0,viewPointDistance
+        uViewPos
     );
 
-    gl.uniform3f(
+    gl.uniform3fv(
         renderProgram.uSunPos,
-        100, 100, 100
+        uSunPos
     );
 
     gl.uniformMatrix4fv(
@@ -79,25 +99,29 @@ function updateMatrices() {
         renderProgram.uNormalMatrix,
         false, uNormalMatrix
     );
+}
 
 
+function updateShadowMapProgramUniforms() {
 
-    // update the modelSunViewMatrix matrix
+    // update the modelSunView matrix
     mat4.mul( uModelSunViewMatrix, uSunViewMatrix, uModelMatrix );
 
-    gl.uniform3f(
+    // put all the uniforms into the shadow map program
+
+    gl.uniform3fv(
         shadowMapProgram.uSunPos,
-        100, 100, 100
+        uSunPos
     );
 
     gl.uniformMatrix4fv(
-        renderProgram.uModelSunViewMatrix,
-        false, uModelSunViewMatrix
-    );
-
-    gl.uniformMatrix4fv(
-        renderProgram.uSunProjectionMatrix,
+        shadowMapProgram.uSunProjectionMatrix,
         false, uSunProjectionMatrix
+    );
+
+    gl.uniformMatrix4fv(
+        shadowMapProgram.uModelSunViewMatrix,
+        false, uModelSunViewMatrix
     );
 }
 
@@ -121,9 +145,9 @@ function makeRenderProgram() {
     renderProgram.normalBuffer      = normalBuffer;
     renderProgram.indexBuffer       = indexBuffer;
 
-    // enable the vertex attributes
-    gl.enableVertexAttribArray( renderProgram.vertexPosition );
-    gl.enableVertexAttribArray( renderProgram.vertexNormal   );
+    // enable the vertex array buffers
+    enableArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );
+    enableArrayBuffer( gl, renderProgram.aVertexNormal  , renderProgram.normalBuffer   );
 
     return renderProgram;
 }
@@ -136,15 +160,16 @@ function makeShadowMapProgram() {
 
     // set vars in the shadow map program
     shadowMapProgram.uSunPos              = gl.getUniformLocation( shadowMapProgram, 'uSunPos'              );
-    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );
     shadowMapProgram.uSunProjectionMatrix = gl.getUniformLocation( shadowMapProgram, 'uSunProjectionMatrix' );
+    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );
 
-    shadowMapProgram.positionBuffer = positionBuffer;
-    shadowMapProgram.indexBuffer    = indexBuffer;
+    shadowMapProgram.aVertexPosition      = gl.getAttribLocation(  shadowMapProgram, 'aVertexPosition' );
+
+    shadowMapProgram.positionBuffer       = positionBuffer;
+    shadowMapProgram.indexBuffer          = indexBuffer;
 
     // enable the vertex attributes
-    gl.enableVertexAttribArray( shadowMapProgram.vertexPosition );
-    gl.enableVertexAttribArray( shadowMapProgram.vertexNormal   );
+    enableArrayBuffer( gl, shadowMapProgram.aVertexPosition, shadowMapProgram.positionBuffer );
 
     return shadowMapProgram;
 }
@@ -227,42 +252,39 @@ let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 const [gl, canvas] = initgl( "glcanvas" );
 
 // create the matrices we need
-const uModelMatrix         = mat4.create(); // both programs
+const uModelMatrix         = mat4.create();
 
-const uViewMatrix          = mat4.create(); // render program
+const uViewMatrix          = mat4.create();
 const uModelViewMatrix     = mat4.create();
 const uProjectionMatrix    = mat4.create();
 const uNormalMatrix        = mat4.create();
 
-const uSunViewMatrix       = mat4.create(); // shadow map program
+const uSunViewMatrix       = mat4.create();
 const uModelSunViewMatrix  = mat4.create();
 const uSunProjectionMatrix = mat4.create();
+
+const uViewPos = [0, 0, 90];
+const uSunPos  = [100, 100, 100];
 
 // make the data buffers
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
 const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );
 
-// setup the viewpoint
-let viewPointDistance  = 90;
-mat4.lookAt( uViewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
-
-// setup the sun's viewpoint
-mat4.lookAt( uSunViewMatrix, [100,100,100], [0,0,0], [0,1,0] );
+// setup the viewpoint and sun viewpoint
+mat4.lookAt( uViewMatrix, uViewPos, [0,0,0], [0,1,0] );
+mat4.lookAt( uSunViewMatrix, uSunPos, [0,0,0], [0,1,0] );
 
 // allow the canvas to handle resizing
 handleCanvasResize( gl, canvas, uProjectionMatrix );
 
-// make the shadow map program
+// make the shadow map program and framebuffer
 const shadowMapProgram = makeShadowMapProgram();
+const [shadowMapDepthFramebuffer, shadowMapDepthTexture] = createShadowMap( gl, canvas.width, canvas.height );
 
 // make and use the render program
 const renderProgram = makeRenderProgram();
 gl.useProgram( renderProgram );
-
-// use the correct vertex buffers
-useArrayBuffer( gl, renderProgram.vertexPosition, renderProgram.positionBuffer );
-useArrayBuffer( gl, renderProgram.vertexNormal  , renderProgram.normalBuffer   );
 
 // make the geometry
 updateGeometry();

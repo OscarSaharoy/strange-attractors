@@ -168,6 +168,79 @@ function createFramebuffer( gl, width, height ) {
 }
 
 
+function createShadowMap( gl, width, height ) {
+
+    // create the depth texture
+    const depthTexture = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, depthTexture );
+ 
+    // setup the texture
+    gl.texImage2D(
+        gl.TEXTURE_2D,      // target
+        0,                  // mip level
+        gl.DEPTH_COMPONENT, // internal format
+        width,              // width
+        height,             // height
+        0,                  // border
+        gl.DEPTH_COMPONENT, // format
+        gl.UNSIGNED_INT,    // type
+        null                // data
+    );
+
+    // set the filtering so we don't need mips
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST       );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST       );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.CLAMP_TO_EDGE );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
+
+    // create a framebuffer
+    const depthFramebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer( gl.FRAMEBUFFER, depthFramebuffer );
+
+    // setup the framebuffer
+    gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,       // target
+        gl.DEPTH_ATTACHMENT,  // attachment point
+        gl.TEXTURE_2D,        // texture target
+        depthTexture,         // texture
+        0                     // mip level
+    );
+
+    // create an unused color texture of the same size as the depth texture
+    const unusedTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, unusedTexture);
+
+    // setup that texture
+    gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        width,
+        height,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        null,
+    );
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+     
+    // attach it to the framebuffer
+    gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,        // target
+        gl.COLOR_ATTACHMENT0,  // attachment point
+        gl.TEXTURE_2D,         // texture target
+        unusedTexture,         // texture
+        0                     // mip level
+    );
+
+    return [depthFramebuffer, depthTexture];
+}
+
+
 function fillBuffer( gl, target, buffer, dataArray ) {
 
     // bind the buffer and fill the data into it
@@ -176,9 +249,12 @@ function fillBuffer( gl, target, buffer, dataArray ) {
 }
 
 
-function useArrayBuffer( gl, attribute, buffer ) {
+function enableArrayBuffer( gl, attribute, buffer ) {
 
-    // bind the buffer containing the attractor geometry    
+    // enable the vertex attribute array
+    gl.enableVertexAttribArray( attribute );
+
+    // bind the buffer    
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
 
     // setup the pointer in that array

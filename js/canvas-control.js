@@ -101,8 +101,8 @@ function wheel( event ) {
     // adjust the zoom level and update the container
     const zoomAmount = event.deltaY / 600;
 
-    viewPointDistance *= 1 + zoomAmount;
-    mat4.lookAt( uViewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
+    vec3.scale( uViewPos, uViewPos, 1 + zoomAmount );
+    mat4.lookAt( uViewMatrix, uViewPos, [0,0,0], [0,1,0] );
 }
 
 // add event listeners to body
