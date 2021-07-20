@@ -555,3 +555,19 @@ function getCentrePoint( points ) {
     // return the average point to approximate the centre of mass
     return v3scale( pointsSum, 1 / points.length );
 }
+
+
+function getBBox( points ) {
+
+    // loop over points, getting the top and bottom corners
+    let topCorner    = points.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
+    let bottomCorner = points.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
+
+    // return the bounding box
+    return { front:     topCorner[0],
+             back:   bottomcorner[0],
+             top:       topCorner[1],
+             bottom: bottomcorner[1],
+             right:     topCorner[2],
+             left:   bottomcorner[2] };
+}

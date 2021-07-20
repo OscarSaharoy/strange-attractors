@@ -13,7 +13,7 @@ body {
 	width:  100vw;
 	height: 100vh;
 	overflow: hidden;
-	background: ghostwhite;
+	background: #fffcfa;
 }
 
 #glcanvas {
@@ -36,7 +36,7 @@ body {
 	grid-template-rows: auto 1fr;
 	overflow-y: auto;
 	overflow-x: visible;
-	color:  var(--grey);
+	color: var(--grey);
 }
 
 /* remove scrollbar code
@@ -63,12 +63,23 @@ h1 {
 	margin-top: 2rem;
 	background: var(--grey);
 	color: white;
-	border-radius: 0.29rem;
+	border-radius: 0.32rem;
 	cursor: pointer;
 	width: min-content;
 	font-weight: 500;
-	padding: 0.7rem 1rem;
+	padding: 0.8rem 1.2rem;
 	text-align: center;
+	font-size: 1.2rem;
+	border: none;
+}
+
+#recalculate:active {
+	background: #000000b0;
+}
+
+#recalculate:focus {
+	box-shadow: 0 0 0px 4px #00000040;
+	outline: none;
 }
 
 h2 {

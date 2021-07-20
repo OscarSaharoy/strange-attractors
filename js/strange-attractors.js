@@ -16,7 +16,7 @@ function drawLoop( gl ) {
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
 
     // run again next frame
-    requestAnimationFrame( () => drawLoop( gl, renderProgram ) );
+    requestAnimationFrame( () => drawLoop( gl ) );
 }
 
 
@@ -47,42 +47,108 @@ function updateGeometry() {
 function updateMatrices() {
 
     // update the modelView matrix
-    mat4.mul(modelViewMatrix, viewMatrix, modelMatrix);
+    mat4.mul( uModelViewMatrix, uViewMatrix, uModelMatrix );
 
     // adjust the normal matrix to match the modelView matrix
-    mat4.invert(normalMatrix, modelViewMatrix);
-    mat4.transpose(normalMatrix, normalMatrix);
+    mat4.invert( uNormalMatrix, uModelViewMatrix );
+    mat4.transpose( uNormalMatrix, uNormalMatrix );
 
     // put all the uniforms into the shader program
 
     gl.uniform3f(
-        renderProgram.viewPos,
+        renderProgram.uViewPos,
         0,0,viewPointDistance
     );
 
     gl.uniform3f(
-        renderProgram.sunPos,
+        renderProgram.uSunPos,
         100, 100, 100
     );
 
     gl.uniformMatrix4fv(
-        renderProgram.projectionMatrix,
-        false,
-        projectionMatrix
+        renderProgram.uProjectionMatrix,
+        false, uProjectionMatrix
     );
 
     gl.uniformMatrix4fv(
-        renderProgram.modelViewMatrix,
-        false,
-        modelViewMatrix
+        renderProgram.uModelViewMatrix,
+        false, uModelViewMatrix
     );
 
     gl.uniformMatrix4fv(
-        renderProgram.normalMatrix,
-        false,
-        normalMatrix
+        renderProgram.uNormalMatrix,
+        false, uNormalMatrix
+    );
+
+
+
+    // update the modelSunViewMatrix matrix
+    mat4.mul( uModelSunViewMatrix, uSunViewMatrix, uModelMatrix );
+
+    gl.uniform3f(
+        shadowMapProgram.uSunPos,
+        100, 100, 100
+    );
+
+    gl.uniformMatrix4fv(
+        renderProgram.uModelSunViewMatrix,
+        false, uModelSunViewMatrix
+    );
+
+    gl.uniformMatrix4fv(
+        renderProgram.uSunProjectionMatrix,
+        false, uSunProjectionMatrix
     );
 }
+
+
+function makeRenderProgram() {
+
+    // make the render program
+    const renderProgram = makeShaderProgram( gl, vsSource, fsSource );
+
+    // set vars in the render program
+    renderProgram.uViewPos          = gl.getUniformLocation( renderProgram, 'uViewPos'          );
+    renderProgram.uSunPos           = gl.getUniformLocation( renderProgram, 'uSunPos'           );
+    renderProgram.uNormalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
+    renderProgram.uProjectionMatrix = gl.getUniformLocation( renderProgram, 'uProjectionMatrix' );
+    renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
+
+    renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
+    renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
+
+    renderProgram.positionBuffer    = positionBuffer;
+    renderProgram.normalBuffer      = normalBuffer;
+    renderProgram.indexBuffer       = indexBuffer;
+
+    // enable the vertex attributes
+    gl.enableVertexAttribArray( renderProgram.vertexPosition );
+    gl.enableVertexAttribArray( renderProgram.vertexNormal   );
+
+    return renderProgram;
+}
+
+
+function makeShadowMapProgram() {
+
+    // make the shadow map program
+    const shadowMapProgram = makeShaderProgram( gl, vShadowShaderSource, fShadowShaderSource );
+
+    // set vars in the shadow map program
+    shadowMapProgram.uSunPos              = gl.getUniformLocation( shadowMapProgram, 'uSunPos'              );
+    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );
+    shadowMapProgram.uSunProjectionMatrix = gl.getUniformLocation( shadowMapProgram, 'uSunProjectionMatrix' );
+
+    shadowMapProgram.positionBuffer = positionBuffer;
+    shadowMapProgram.indexBuffer    = indexBuffer;
+
+    // enable the vertex attributes
+    gl.enableVertexAttribArray( shadowMapProgram.vertexPosition );
+    gl.enableVertexAttribArray( shadowMapProgram.vertexNormal   );
+
+    return shadowMapProgram;
+}
+
 
 
 // get mean and spread of a list of pointer positions
@@ -103,128 +169,6 @@ let endToEndVector     = v3zero;
 let lastEndToEndVector = v3zero;
 let skip1Frame         = false;
 let t = 0;
-
-
-function setPointerMeanAndSpread() {
-
-    // get all the pointer vectors
-    const pointers = Object.values( pointerPositions );
-
-    // use functions to find mean and spread and end to end vector (normalised)
-    meanPointer    = getMeanPointer( pointers );
-    pointerSpread  = getPointerSpread( pointers, meanPointer );
-    endToEndVector = v3norm( getEndToEnd( pointers ) );
-}
-
-function pointerdown( event ) {
-
-    event.preventDefault();
-
-    // add the pointer to pointerPositions and activePointers
-    pointerPositions[event.pointerId] = [event.pageX, -event.pageY, 0];
-    activePointers.push( event.pointerId );
-
-    // set the mean pointer position so that we have access to the new meanPointer straight away
-    setPointerMeanAndSpread()
-
-    // we added a new pointer so skip a frame to prevent
-    // a step change in pan position
-    skip1Frame = true;
-}
-
-function pointermove( event ) {
-
-    event.preventDefault();
-
-    // if this pointer isn't an active pointer
-    // (pointerdown occured over a preventDrag element)
-    // then do nothing
-    if( !activePointers.includes(event.pointerId) ) return;
-
-    // keep track of the pointer pos
-    pointerPositions[event.pointerId] = [ event.pageX, -event.pageY, 0 ];
-}
-
-function pointerup( event ) {
-
-    // remove the pointer from active pointers and pointerPositions
-    // (does nothing if it wasnt in them)
-    activePointers = activePointers.filter( id => id != event.pointerId );
-    delete pointerPositions[event.pointerId];
-
-    // we lost a pointer so skip a frame to prevent
-    // a step change in pan position
-    skip1Frame = true;
-}
-
-function panAndZoom() {
-
-    // if theres no active pointers do nothing
-    if( !activePointers.length ) return;
-
-    // set the mean pointer and spread
-    setPointerMeanAndSpread();
-    
-    // we have to skip a frame when we change number of pointers to avoid a jump
-    if( !skip1Frame ) {
-
-        // calculate inverse model matrix (rotation matrix)
-        const invModel = mat4.transpose(new Array(16), modelMatrix);
-
-        // calculate the movement of the mean pointer to use for panning
-        const meanPointerMove = v3sub( meanPointer, lastMeanPointer );
-        const axis = v3cross( [0,0,1], meanPointerMove );
-
-        // rotate the geometry
-        vec3.transformMat4( axis, axis, invModel );
-        mat4.rotate( modelMatrix, modelMatrix, v3mod(axis) / 150, axis );
-        
-        // call the wheel function with a constructed event to zoom with pinch
-        wheel( { deltaY: (lastPointerSpread - pointerSpread) * 2.4 } );
-
-        // rotate around the z axis to twist
-        const spinAmount = v3dot( v3cross( lastEndToEndVector, endToEndVector ), [0,0,1.4] );
-        vec3.transformMat4( axis, [0,0,1], invModel );
-        mat4.rotate( modelMatrix, modelMatrix, spinAmount, axis );
-    }
-
-    // update the vars to prepare for the next frame
-    lastMeanPointer    = meanPointer;
-    lastPointerSpread  = pointerSpread;
-    lastEndToEndVector = endToEndVector;
-    skip1Frame         = false;
-}
-
-function wheel( event ) {
-
-    // prevent browser from doing anything
-    // event.preventDefault?.();
-
-    // if( event.target != document.body ) return;
-
-    // adjust the zoom level and update the container
-    const zoomAmount = event.deltaY / 600;
-
-    viewPointDistance *= 1 + zoomAmount;
-    mat4.lookAt(viewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
-}
-
-
-
-// calculation variables
-const dt      = 5e-3;
-const nPoints = 3502;
-const start   = [ 0.1, -0.1, 8.8 ];
-const points  = new Array(nPoints);
-
-// controls whether the mesh is rendered with sharp edges
-let sharpEdges = true;
-
-// arrays that will contain the strange attractor geometry data
-let nVerts = (nPoints - 3) * 8 * 23/4 - 9 * !sharpEdges; // todo need to correct this
-let verts  = new Float32Array( (nVerts + 8)*3 );
-let norms  = new Float32Array( (nVerts + 8)*3 );
-let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 
 // vertOffsets defines the cross section of the geometry 
 const width = 1;
@@ -263,60 +207,59 @@ const vertOffsets2 = [
                       { normal: -0.031*width, curve:  1.095*width } ,
                     ];
 
+
+// calculation variables
+const dt      = 5e-3;
+const nPoints = 3500;
+const start   = [ 0.1, -0.1, 8.8 ];
+const points  = new Array(nPoints);
+
+// controls whether the mesh is rendered with sharp edges
+let sharpEdges = true;
+
+// arrays that will contain the strange attractor geometry data
+let nVerts = (nPoints - 3) * 8 * 23/4 - 9 * !sharpEdges; // todo need to correct this
+let verts  = new Float32Array( (nVerts + 8)*3 );
+let norms  = new Float32Array( (nVerts + 8)*3 );
+let idxs   = new Uint32Array(  (nVerts + 8)*3 );
+
 // get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
 
-// add event listeners to canvas
-document.body.addEventListener( "pointerdown",  pointerdown );
-document.body.addEventListener( "pointerup",    pointerup   );
-document.body.addEventListener( "pointermove",  pointermove );
-document.body.addEventListener( "wheel",        wheel       ); 
-
-
 // create the matrices we need
-const modelMatrix      = mat4.create();
-const viewMatrix       = mat4.create();
-const normalMatrix     = mat4.create();
-const modelViewMatrix  = mat4.create();
-const projectionMatrix = mat4.create();
+const uModelMatrix         = mat4.create(); // both programs
 
-// setup the viewpoint
-let viewPointDistance = 90;
-mat4.lookAt(viewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
+const uViewMatrix          = mat4.create(); // render program
+const uModelViewMatrix     = mat4.create();
+const uProjectionMatrix    = mat4.create();
+const uNormalMatrix        = mat4.create();
 
-// allow the canvas to handle resizing
-handleCanvasResize( gl, canvas, projectionMatrix );
+const uSunViewMatrix       = mat4.create(); // shadow map program
+const uModelSunViewMatrix  = mat4.create();
+const uSunProjectionMatrix = mat4.create();
 
 // make the data buffers
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
 const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );
 
+// setup the viewpoint
+let viewPointDistance  = 90;
+mat4.lookAt( uViewMatrix, [0,0,viewPointDistance], [0,0,0], [0,1,0] );
 
-// make the render program
-const renderProgram = makeShaderProgram( gl, vsSource, fsSource );
+// setup the sun's viewpoint
+mat4.lookAt( uSunViewMatrix, [100,100,100], [0,0,0], [0,1,0] );
 
-// set some vars in the render program
-renderProgram.vertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
-renderProgram.vertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
+// allow the canvas to handle resizing
+handleCanvasResize( gl, canvas, uProjectionMatrix );
 
-renderProgram.viewPos          = gl.getUniformLocation( renderProgram, 'viewPos'           );
-renderProgram.sunPos           = gl.getUniformLocation( renderProgram, 'sunPos'            );
-renderProgram.normalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
-renderProgram.projectionMatrix = gl.getUniformLocation( renderProgram, 'uProjectionMatrix' );
-renderProgram.modelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
+// make the shadow map program
+const shadowMapProgram = makeShadowMapProgram();
 
-renderProgram.positionBuffer   = positionBuffer;
-renderProgram.normalBuffer     = normalBuffer;
-renderProgram.indexBuffer      = indexBuffer;
-
-// enable the vertex attributes
-gl.enableVertexAttribArray( renderProgram.vertexPosition );
-gl.enableVertexAttribArray( renderProgram.vertexNormal   );
-
-// use the render program
+// make and use the render program
+const renderProgram = makeRenderProgram();
 gl.useProgram( renderProgram );
-    
+
 // use the correct vertex buffers
 useArrayBuffer( gl, renderProgram.vertexPosition, renderProgram.positionBuffer );
 useArrayBuffer( gl, renderProgram.vertexNormal  , renderProgram.normalBuffer   );
