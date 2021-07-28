@@ -1,6 +1,25 @@
 // Oscar Saharoy 2021
 
 
+// get mean and spread of a list of pointer positions
+const getMeanPointer   = arr => arr.reduce( (acc, val) => v3add( acc, v3scale(val, 1/arr.length ) ), v3zero );
+const getPointerSpread = (positions, mean) => positions.reduce( (acc, val) => acc + ((val[0]-mean[0])**2 + (val[1]-mean[1])**2)**0.5, 0 );
+const getPointerTwist  = (positions, mean) => positions.reduce( (acc, val) => acc + v3mod( v3cross( [0,1,0], v3sub(val, mean) ) ), 0 );
+const getPositionDiffs = positions => positions.slice(1).map( (val,i) => v3sub( val, positions[i] ) ); 
+const getEndToEnd      = positions => getPositionDiffs( positions ).reduce( (acc,val) => v3add(acc, val), v3zero );
+
+// vars to track panning and zooming
+let activePointers     = [];
+let pointerPositions   = {};
+let meanPointer        = v3zero;
+let lastMeanPointer    = v3zero;
+let pointerSpread      = 0;
+let lastPointerSpread  = 0;
+let endToEndVector     = v3zero;
+let lastEndToEndVector = v3zero;
+let skip1Frame         = false;
+
+
 function setPointerMeanAndSpread() {
 
     // get all the pointer vectors

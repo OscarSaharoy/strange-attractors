@@ -170,6 +170,9 @@ function createFramebuffer( gl, width, height ) {
 
 function createShadowMap( gl, width, height ) {
 
+    // set texture unit 0 active
+    gl.activeTexture(gl.TEXTURE0);
+
     // create the depth texture
     const depthTexture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, depthTexture );
@@ -206,6 +209,9 @@ function createShadowMap( gl, width, height ) {
         0                     // mip level
     );
 
+    // set texture unit 1 active
+    gl.activeTexture(gl.TEXTURE1);
+
     // create an unused color texture of the same size as the depth texture
     const unusedTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, unusedTexture);
@@ -220,7 +226,7 @@ function createShadowMap( gl, width, height ) {
         0,
         gl.RGBA,
         gl.UNSIGNED_BYTE,
-        null,
+        null
     );
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);

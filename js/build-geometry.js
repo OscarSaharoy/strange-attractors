@@ -557,17 +557,39 @@ function getCentrePoint( points ) {
 }
 
 
-function getBBox( points ) {
+function getBBox( inPoints ) {
 
-    // loop over points, getting the top and bottom corners
-    let topCorner    = points.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
-    let bottomCorner = points.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
+    // loop over inPoints, getting the top and bottom corners
+    let topCorner    = inPoints.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
+    let bottomCorner = inPoints.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
 
     // return the bounding box
-    return { front:     topCorner[0],
-             back:   bottomcorner[0],
+    return { right:     topCorner[0],
+             left:   bottomCorner[0],
              top:       topCorner[1],
-             bottom: bottomcorner[1],
-             right:     topCorner[2],
-             left:   bottomcorner[2] };
+             bottom: bottomCorner[1],
+             front:     topCorner[2],
+             back:   bottomCorner[2],
+             topCorner: topCorner,
+             bottomCorner: bottomCorner,
+             centre: v3scale( v3add(topCorner, bottomCorner), 0.5 ) };
+}
+
+
+function getBoundingPoints( inPoints ) {
+
+    // loop over inPoints, getting the top and bottom corners
+    let topCorner    = inPoints.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
+    let bottomCorner = inPoints.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
+
+    // return the bounding points
+    return [ [    topCorner[0],    topCorner[1],    topCorner[2] ],
+             [    topCorner[0],    topCorner[1], bottomCorner[2] ],
+             [    topCorner[0], bottomCorner[1], bottomCorner[2] ],
+             [ bottomCorner[0], bottomCorner[1], bottomCorner[2] ],
+             [ bottomCorner[0], bottomCorner[1],    topCorner[2] ],
+             [ bottomCorner[0],    topCorner[1],    topCorner[2] ],
+             [ bottomCorner[0],    topCorner[1], bottomCorner[2] ],
+             [    topCorner[0], bottomCorner[1],    topCorner[2] ]
+           ]
 }

@@ -1,10 +1,44 @@
 // Oscar Saharoy 2021
 
 
+// map array of points by a mat4
+const mapByMat4 = ( inPoints, M ) => boundingPoints.map( p => vec3.transformMat4(vec3.create(), p, M) );
+
+
 function drawLoop( gl ) {
 
     // run the pan and zoom routine (canvas-control.js)
     panAndZoom();
+
+    renderShadowMap();
+    renderScene();
+    // testShadowMap();
+
+    // run again next frame
+    requestAnimationFrame( () => drawLoop( gl ) );
+}
+
+
+function testShadowMap() {
+
+    // swtich to render program to update the uniforms
+    gl.useProgram( renderProgram );
+    updateRenderProgramUniforms();
+
+    // bind and clear the canvas
+    gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+    // use the shadow map program and update its uniforms
+    gl.useProgram(shadowMapProgram);
+    updateShadowMapProgramUniforms();
+
+    // render the shadow map
+    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+}
+
+
+function renderShadowMap() {
 
     // bind and clear the shadow map framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, shadowMapDepthFramebuffer );
@@ -16,12 +50,6 @@ function drawLoop( gl ) {
 
     // render the shadow map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
-
-
-    renderScene();
-
-    // run again next frame
-    requestAnimationFrame( () => drawLoop( gl ) );
 }
 
 
@@ -29,6 +57,7 @@ function renderScene() {
 
     // bind and clear the canvas framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+    //gl.viewPort
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
     // use the render program and update its uniforms
@@ -49,10 +78,13 @@ function updateGeometry() {
     for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1] );
 
     // get the centre of the points
-    const centrePoint = getCentrePoint( points );
+    centrePoint  = getCentrePoint( points );
 
     // shift all the points by centrePoint to centre the geometry at the origin
     points.forEach( p => vec3.sub(p, p, centrePoint) );
+
+    // set the bounding points - used to calculate shadow map
+    boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
     calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
@@ -91,6 +123,11 @@ function updateRenderProgramUniforms() {
     );
 
     gl.uniformMatrix4fv(
+        renderProgram.uModelMatrix,
+        false, uModelMatrix
+    );
+
+    gl.uniformMatrix4fv(
         renderProgram.uModelViewMatrix,
         false, uModelViewMatrix
     );
@@ -99,13 +136,45 @@ function updateRenderProgramUniforms() {
         renderProgram.uNormalMatrix,
         false, uNormalMatrix
     );
+
+    gl.uniformMatrix4fv(
+        renderProgram.uSunVPMatrix,
+        false, uSunVPMatrix
+    );
+
+    // bind the shadow map sampler to texture unit 0
+    gl.uniform1i( renderProgram.uShadowMap, 0 );
 }
 
 
 function updateShadowMapProgramUniforms() {
 
-    // update the modelSunView matrix
+    // update the sun projection matrix to fit the geometry to the shadow map
+
+    // get the centre point in world space to point the sun at
+    const pointsCentre = getCentrePoint( mapByMat4( boundingPoints, uModelMatrix ) );
+
+    // project bounding points to sun's view space and get bounding box of them
+    const sunViewSpaceBBox = getBBox( mapByMat4( boundingPoints, uModelSunViewMatrix ) );
+
+    // calcuLate the required field of view and aspect
+    const viewDist      = v3mod( v3sub(uSunPos, pointsCentre) );
+    const verticalFOV   = Math.atan( Math.abs(sunViewSpaceBBox.top - sunViewSpaceBBox.bottom) / 2 / viewDist ) * 2.2
+    const horizontalFOV = Math.atan( Math.abs(sunViewSpaceBBox.right - sunViewSpaceBBox.left) / 2 / viewDist ) * 2.2
+    const aspect        = horizontalFOV / verticalFOV;
+
+    // set the near and far clipping planes
+    const zNear = Math.abs(sunViewSpaceBBox.front) * 0.9;
+    const zFar  = Math.abs(sunViewSpaceBBox.back ) * 1.1;
+
+    // console.log(zNear, zFar)
+
+    mat4.perspective( uSunProjectionMatrix, verticalFOV, aspect, zNear, zFar );
+
+    // update the sun mvp matrices
+    mat4.lookAt( uSunViewMatrix, uSunPos, pointsCentre, [0,1,0] );
     mat4.mul( uModelSunViewMatrix, uSunViewMatrix, uModelMatrix );
+    mat4.mul( uSunVPMatrix, uSunProjectionMatrix, uSunViewMatrix );
 
     // put all the uniforms into the shadow map program
 
@@ -136,7 +205,10 @@ function makeRenderProgram() {
     renderProgram.uSunPos           = gl.getUniformLocation( renderProgram, 'uSunPos'           );
     renderProgram.uNormalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
     renderProgram.uProjectionMatrix = gl.getUniformLocation( renderProgram, 'uProjectionMatrix' );
+    renderProgram.uModelMatrix      = gl.getUniformLocation( renderProgram, 'uModelMatrix'      );
     renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
+    renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram, 'uSunVPMatrix'      );
+    renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram, 'uShadowMap'        );
 
     renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
     renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
@@ -174,26 +246,6 @@ function makeShadowMapProgram() {
     return shadowMapProgram;
 }
 
-
-
-// get mean and spread of a list of pointer positions
-const getMeanPointer   = arr => arr.reduce( (acc, val) => v3add( acc, v3scale(val, 1/arr.length ) ), v3zero );
-const getPointerSpread = (positions, mean) => positions.reduce( (acc, val) => acc + ((val[0]-mean[0])**2 + (val[1]-mean[1])**2)**0.5, 0 );
-const getPointerTwist  = (positions, mean) => positions.reduce( (acc, val) => acc + v3mod( v3cross( [0,1,0], v3sub(val, mean) ) ), 0 );
-const getPositionDiffs = positions => positions.slice(1).map( (val,i) => v3sub( val, positions[i] ) ); 
-const getEndToEnd      = positions => getPositionDiffs( positions ).reduce( (acc,val) => v3add(acc, val), v3zero );
-
-// vars to track panning and zooming
-let activePointers     = [];
-let pointerPositions   = {};
-let meanPointer        = v3zero;
-let lastMeanPointer    = v3zero;
-let pointerSpread      = 0;
-let lastPointerSpread  = 0;
-let endToEndVector     = v3zero;
-let lastEndToEndVector = v3zero;
-let skip1Frame         = false;
-let t = 0;
 
 // vertOffsets defines the cross section of the geometry 
 const width = 1;
@@ -239,6 +291,7 @@ const nPoints = 3500;
 const start   = [ 0.1, -0.1, 8.8 ];
 const points  = new Array(nPoints);
 
+
 // controls whether the mesh is rendered with sharp edges
 let sharpEdges = true;
 
@@ -262,9 +315,12 @@ const uNormalMatrix        = mat4.create();
 const uSunViewMatrix       = mat4.create();
 const uModelSunViewMatrix  = mat4.create();
 const uSunProjectionMatrix = mat4.create();
+const uSunVPMatrix         = mat4.create();
 
 const uViewPos = [0, 0, 90];
 const uSunPos  = [100, 100, 100];
+
+let boundingPoints = [];
 
 // make the data buffers
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
@@ -272,8 +328,8 @@ const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );
 
 // setup the viewpoint and sun viewpoint
-mat4.lookAt( uViewMatrix, uViewPos, [0,0,0], [0,1,0] );
-mat4.lookAt( uSunViewMatrix, uSunPos, [0,0,0], [0,1,0] );
+mat4.lookAt( uViewMatrix   , uViewPos, [0,0,0], [0,1,0] );
+mat4.lookAt( uSunViewMatrix, uSunPos , [0,0,0], [0,1,0] );
 
 // allow the canvas to handle resizing
 handleCanvasResize( gl, canvas, uProjectionMatrix );
