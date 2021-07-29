@@ -6,6 +6,7 @@
 	user-select: none;
 	box-sizing: border-box;
 	--grey: #222;
+	touch-action: none;
 }
 
 body {

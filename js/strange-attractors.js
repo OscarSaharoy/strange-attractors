@@ -87,7 +87,7 @@ function updateGeometry() {
     boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=sharpEdges );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
@@ -142,8 +142,8 @@ function updateRenderProgramUniforms() {
         false, uSunVPMatrix
     );
 
-    // bind the shadow map sampler to texture unit 0
-    gl.uniform1i( renderProgram.uShadowMap, 0 );
+    // bind the shadow map sampler to texture unit 1
+    gl.uniform1i( renderProgram.uShadowMap, 1 );
 }
 
 

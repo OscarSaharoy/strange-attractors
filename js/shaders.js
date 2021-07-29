@@ -37,7 +37,7 @@ void main() {
     mediump float diffuse    = dot( transformedNormal.xyz, sunDir );
     mediump vec4 linearColor = vec4( diffuse * sunColor * material, 1.0 );
 
-    vLighting = pow( linearColor, vec4(1.0/2.2) );
+    vLighting = linearColor;
 }
 
 
@@ -57,10 +57,10 @@ void main() {
     mediump float currentDepth     = (vProjectedTexcoord.z + 1.0) * 0.007;
 
     mediump float projectedDepth   = texture2D( uShadowMap, projectedTexcoord.xy*0.5+0.5 ).r;
-    mediump float shadowLight      = (projectedDepth < currentDepth) ? 0.0 : 1.0;
+    mediump float shadowLight      = (projectedDepth < currentDepth - 1e-2) ? 0.0 : 1.0;
 
-    // gl_FragColor = vec4(1.0);//vec4( vec3( shadowLight ), 1.0 );
     gl_FragColor = vLighting * vec4( vec3(shadowLight), 1.0 );
+    gl_FragColor = vec4(vec3(projectedDepth), 1.0);
 }
 
 
