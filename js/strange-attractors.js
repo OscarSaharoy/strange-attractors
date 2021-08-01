@@ -29,6 +29,9 @@ function testShadowMap() {
     gl.bindFramebuffer( gl.FRAMEBUFFER, null );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
+    // update viwport size
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
     // use the shadow map program and update its uniforms
     gl.useProgram(shadowMapProgram);
     updateShadowMapProgramUniforms();
@@ -44,6 +47,9 @@ function renderShadowMap() {
     gl.bindFramebuffer( gl.FRAMEBUFFER, shadowMapDepthFramebuffer );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
+    // update viwport size
+    gl.viewport(0, 0, shadowMapSize, shadowMapSize);
+
     // use the shadow map program and update its uniforms
     gl.useProgram(shadowMapProgram);
     updateShadowMapProgramUniforms();
@@ -57,8 +63,10 @@ function renderScene() {
 
     // bind and clear the canvas framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, null );
-    //gl.viewPort
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+    // update viwport size
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
     // use the render program and update its uniforms
     gl.useProgram(renderProgram);
@@ -87,7 +95,7 @@ function updateGeometry() {
     boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
@@ -336,7 +344,8 @@ handleCanvasResize( gl, canvas, uProjectionMatrix );
 
 // make the shadow map program and framebuffer
 const shadowMapProgram = makeShadowMapProgram();
-const [shadowMapDepthFramebuffer, shadowMapDepthTexture] = createShadowMap( gl, canvas.width, canvas.height );
+const shadowMapSize = 4096;
+const [shadowMapDepthFramebuffer, shadowMapDepthTexture] = createShadowMap( gl, shadowMapSize, shadowMapSize );
 
 // make and use the render program
 const renderProgram = makeRenderProgram();
