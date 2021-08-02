@@ -20,7 +20,6 @@ varying mediump vec4 vWorldPos;
 varying mediump vec4 vProjectedTexcoord;
 varying mediump vec3 vSurfaceToSun;
 varying mediump vec3 vSurfaceToView;
-// varying mediump vec4 vLighting;
 varying mediump vec4 vNormal;
 
 
@@ -42,12 +41,12 @@ void main() {
 // ==================================================================================================================
 
 uniform sampler2D uShadowMap;
+uniform mediump float uShadowMapSize;
 
 varying mediump vec4 vWorldPos;
 varying mediump vec4 vProjectedTexcoord;
 varying mediump vec3 vSurfaceToSun;
 varying mediump vec3 vSurfaceToView;
-// varying mediump vec4 vLighting;
 varying mediump vec4 vNormal;
 
 
@@ -56,10 +55,11 @@ mediump float shadowLight() {
     mediump vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
     mediump float currentDepth     = projectedTexcoord.z;
 
-    // mediump float projectedDepth   = texture2D( uShadowMap, projectedTexcoord.xy*0.5+0.5 ).r;
-    // mediump float outval           = (projectedDepth < currentDepth - 1.5e-2) ? 0.2 : 1.0;
-
     mediump vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
+
+    // mediump float projectedDepth   = texture2D( uShadowMap, texPos ).r;
+    // mediump float outval           = (projectedDepth < currentDepth - 1.5e-2) ? 0.1 : 1.0;
+
 
     mediump float outval = 0.0;
 
@@ -69,7 +69,7 @@ mediump float shadowLight() {
             mediump vec2 offset = vec2( i * 4.0/4096.0, j * 4.0/4096.0 );
 
             mediump float projectedDepth = texture2D( uShadowMap, texPos + offset ).r;
-            outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.2 : 1.0 ) / 9.0;
+            outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.1 : 1.0 ) / 9.0;
         }
     }
 

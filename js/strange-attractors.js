@@ -7,15 +7,21 @@ const mapByMat4 = ( inPoints, M ) => boundingPoints.map( p => vec3.transformMat4
 
 function drawLoop( gl ) {
 
+    // run again next frame
+    requestAnimationFrame( () => drawLoop( gl ) );
+
     // run the pan and zoom routine (canvas-control.js)
     panAndZoom();
 
+    // stop if we don't need to redraw
+    if( !shouldRedraw ) return;
+
+    // render graphics
     renderShadowMap();
     renderScene();
     // testShadowMap();
 
-    // run again next frame
-    requestAnimationFrame( () => drawLoop( gl ) );
+    shouldRedraw = false;
 }
 
 
@@ -33,7 +39,7 @@ function testShadowMap() {
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     // use the shadow map program and update its uniforms
-    gl.useProgram(shadowMapProgram);
+    gl.useProgram( shadowMapProgram );
     updateShadowMapProgramUniforms();
 
     // render the shadow map
@@ -48,7 +54,7 @@ function renderShadowMap() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
     // update viwport size
-    gl.viewport(0, 0, shadowMapSize, shadowMapSize);
+    gl.viewport( 0, 0, uShadowMapSize, uShadowMapSize );
 
     // use the shadow map program and update its uniforms
     gl.useProgram(shadowMapProgram);
@@ -150,6 +156,11 @@ function updateRenderProgramUniforms() {
         false, uSunVPMatrix
     );
 
+    gl.uniform1f(
+        renderProgram.uShadowMapSize,
+        false, uShadowMapSize
+    );
+
     // bind the shadow map sampler to texture unit 1
     gl.uniform1i( renderProgram.uShadowMap, 1 );
 }
@@ -176,6 +187,7 @@ function updateShadowMapProgramUniforms() {
     const zFar  = Math.abs(sunViewSpaceBBox.back ) * 1.1;
 
     // console.log(zNear, zFar)
+
 
     mat4.perspective( uSunProjectionMatrix, verticalFOV, aspect, zNear, zFar );
 
@@ -217,6 +229,7 @@ function makeRenderProgram() {
     renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
     renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram, 'uSunVPMatrix'      );
     renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram, 'uShadowMap'        );
+    renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram, 'uShadowMapSize'    );
 
     renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
     renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
@@ -344,8 +357,9 @@ handleCanvasResize( gl, canvas, uProjectionMatrix );
 
 // make the shadow map program and framebuffer
 const shadowMapProgram = makeShadowMapProgram();
-const shadowMapSize = 4096;
-const [shadowMapDepthFramebuffer, shadowMapDepthTexture] = createShadowMap( gl, shadowMapSize, shadowMapSize );
+const uShadowMapSize = Math.max(canvas.width*2, canvas.height*2);
+const [shadowMapDepthFramebuffer, shadowMapDepthTexture] = createShadowMap( gl, uShadowMapSize, uShadowMapSize );
+// const [aoDepthFramebuffer, aoDepthTexture]               = createShadowMap( gl, uShadowMapSize, uShadowMapSize, );
 
 // make and use the render program
 const renderProgram = makeRenderProgram();
@@ -356,3 +370,8 @@ updateGeometry();
 
 // start the draw loop
 drawLoop( gl );
+
+// initial scene draw
+renderShadowMap();
+renderShadowMap();
+renderScene();

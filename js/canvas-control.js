@@ -18,6 +18,7 @@ let lastPointerSpread  = 0;
 let endToEndVector     = v3zero;
 let lastEndToEndVector = v3zero;
 let skip1Frame         = false;
+let shouldRedraw       = false;
 
 
 function setPointerMeanAndSpread() {
@@ -79,7 +80,7 @@ function panAndZoom() {
 
     // set the mean pointer and spread
     setPointerMeanAndSpread();
-    
+
     // we have to skip a frame when we change number of pointers to avoid a jump
     if( !skip1Frame ) {
 
@@ -101,6 +102,9 @@ function panAndZoom() {
         const spinAmount = v3dot( v3cross( lastEndToEndVector, endToEndVector ), [0,0,1.4] );
         vec3.transformMat4( axis, [0,0,1], invModel );
         mat4.rotate( uModelMatrix, uModelMatrix, spinAmount, axis );
+
+        // we've adjusted the viewpoint so redraw the scene
+        shouldRedraw = true;
     }
 
     // update the vars to prepare for the next frame
@@ -122,6 +126,9 @@ function wheel( event ) {
 
     vec3.scale( uViewPos, uViewPos, 1 + zoomAmount );
     mat4.lookAt( uViewMatrix, uViewPos, [0,0,0], [0,1,0] );
+
+    // we adjusted the viewpoint so redraw the scene
+    shouldRedraw = true;
 }
 
 // add event listeners to body
