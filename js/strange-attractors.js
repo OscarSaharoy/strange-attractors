@@ -325,6 +325,9 @@ let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 // get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
 
+// set canvas to redraw on resize
+new ResizeObserver( () => shouldRedraw = true ).observe( canvas );
+
 // create the matrices we need
 const uModelMatrix         = mat4.create();
 
