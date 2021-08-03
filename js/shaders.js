@@ -61,9 +61,6 @@ mediump float shadowLight() {
     // mediump float projectedDepth   = texture2D( uShadowMap, texPos ).r;
     // mediump float outval           = (projectedDepth < currentDepth - 1.5e-2) ? 0.1 : 1.0;
 
-
-    mediump float outval = 0.0;
-
     // for( mediump float i=-1.0; i<2.0; ++i ) {
     //     for( mediump float j=-1.0; j<2.0; ++j ) {
 
@@ -74,12 +71,14 @@ mediump float shadowLight() {
     //     }
     // }
 
+    mediump float outval = 0.0;
+
     for( int i = 0; i < 8; ++i ) {
 
         mediump vec2 offset = uSampleOffsets[i];
 
         mediump float projectedDepth = texture2D( uShadowMap, texPos + offset / uShadowMapSize ).r;
-        outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.1 : 1.0 ) / 8.0;
+        outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
     }
 
     return outval;
