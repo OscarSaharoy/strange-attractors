@@ -158,7 +158,7 @@ function updateRenderProgramUniforms() {
 
     gl.uniform1f(
         renderProgram.uShadowMapSize,
-        false, uShadowMapSize
+        uShadowMapSize
     );
 
     // bind the shadow map sampler to texture unit 1
