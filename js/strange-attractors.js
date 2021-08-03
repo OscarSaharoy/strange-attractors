@@ -161,6 +161,18 @@ function updateRenderProgramUniforms() {
         uShadowMapSize
     );
 
+    gl.uniform2fv(
+        renderProgram.uSampleOffsets,
+        new Float32Array( [ 0.282571,  0.023957, 
+                           -0.792657, -0.945738, 
+                            0.922361,  0.411756, 
+                           -0.165838,  0.552995, 
+                           -0.566027, -0.216651, 
+                            0.335398, -0.783654, 
+                            0.019074, -0.318522, 
+                           -0.647572,  0.581896 ].map(x => x*7) )
+    );
+
     // bind the shadow map sampler to texture unit 1
     gl.uniform1i( renderProgram.uShadowMap, 1 );
 }
@@ -230,6 +242,7 @@ function makeRenderProgram() {
     renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram, 'uSunVPMatrix'      );
     renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram, 'uShadowMap'        );
     renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram, 'uShadowMapSize'    );
+    renderProgram.uSampleOffsets    = gl.getUniformLocation( renderProgram, 'uSampleOffsets'    );
 
     renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
     renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
