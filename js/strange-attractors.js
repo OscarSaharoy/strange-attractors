@@ -28,10 +28,10 @@ function drawLoop( gl ) {
 
     // render graphics
     // testShadowMap();
-    // testDepthBuffer();
     renderShadowMap();
     // renderShadows();
     // renderDepthBuffer();
+    // testDepthBuffer();
     // renderAmbientOcclusion();
     renderScene();
 
@@ -79,6 +79,44 @@ function renderShadowMap() {
 }
 
 
+function testDepthBuffer() {
+
+    // swtich to render program to update the uniforms
+    gl.useProgram( renderProgram );
+    updateRenderProgramUniforms();
+
+    // bind and clear the canvas
+    gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+    // update viwport size
+    gl.viewport( 0, 0, canvas.width, canvas.height );
+
+    // use the depth program and update its uniforms
+    gl.useProgram( depthProgram );
+    updateDepthProgramUniforms();
+
+    // render the shadow map
+    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+}
+
+function renderDepthBuffer() {
+
+    // bind and clear the depth framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, depthFramebuffer );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+    // update viwport size
+    gl.viewport( 0, 0, canvas.width, canvas.height );
+
+    // use the depth program and update its uniforms
+    gl.useProgram( depthProgram );
+    updateDepthProgramUniforms();
+
+    // render the shadow map
+    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+}
+
 
 function renderAmbientOcclusion() {
 
@@ -91,7 +129,7 @@ function renderAmbientOcclusion() {
 
     // use the ambient occlusion program and update its uniforms
     gl.useProgram( ambientOcclusionProgram );
-    updateShadowMapProgramUniforms();
+    updateAmbientOcclusionProgramUniforms();
 
     // render the shadow map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
@@ -228,12 +266,11 @@ function updateShadowMapProgramUniforms() {
     const aspect        = horizontalFOV / verticalFOV;
 
     // set the near and far clipping planes
-    const zNear = Math.abs(sunViewSpaceBBox.front) * 0.9;
-    const zFar  = Math.abs(sunViewSpaceBBox.back ) * 1.1;
+    const zMid  = ( sunViewSpaceBBox.front + sunViewSpaceBBox.back ) / 2;
+    const zNear =  - zMid + ( zMid - sunViewSpaceBBox.front ) * 1.1;
+    const zFar  =  - zMid + ( zMid - sunViewSpaceBBox.back  ) * 1.1;
 
-    // console.log(zNear, zFar)
-
-
+    // generate the projection matrix
     mat4.perspective( uSunProjectionMatrix, verticalFOV, aspect, zNear, zFar );
 
     // update the sun mvp matrices
@@ -256,6 +293,36 @@ function updateShadowMapProgramUniforms() {
     gl.uniformMatrix4fv(
         shadowMapProgram.uModelSunViewMatrix,
         false, uModelSunViewMatrix
+    );
+}
+
+
+function updateDepthProgramUniforms() {
+
+    // get the centre point in world space to point the sun at
+    const pointsCentre = getCentrePoint( mapByMat4( boundingPoints, uModelMatrix ) );
+
+    // project bounding points to view space and get bounding box of them
+    const viewSpaceBBox = getBBox( mapByMat4( boundingPoints, uModelViewMatrix ) );
+
+    // set the near and far clipping planes
+    const zMid  = ( viewSpaceBBox.front + viewSpaceBBox.back ) / 2;
+    const zNear =  - zMid + ( zMid - viewSpaceBBox.front ) * 1.1;
+    const zFar  =  - zMid + ( zMid - viewSpaceBBox.back  ) * 1.1;
+
+    // generate the projection matrix
+    mat4.perspective( uDepthProjectionMatrix, 45 * Math.PI / 180, canvas.width/canvas.height, Math.max(zNear, 1), zFar );
+
+
+    // put the MVP matrices into the depth shader program
+    gl.uniformMatrix4fv(
+        depthProgram.uDepthProjectionMatrix,
+        false, uDepthProjectionMatrix
+    );
+
+    gl.uniformMatrix4fv(
+        depthProgram.uModelViewMatrix,
+        false, uModelViewMatrix
     );
 }
 
@@ -302,7 +369,7 @@ function makeShadowMapProgram() {
     shadowMapProgram.uSunProjectionMatrix = gl.getUniformLocation( shadowMapProgram, 'uSunProjectionMatrix' );
     shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );
 
-    shadowMapProgram.aVertexPosition      = gl.getAttribLocation(  shadowMapProgram, 'aVertexPosition' );
+    shadowMapProgram.aVertexPosition      = gl.getAttribLocation(  shadowMapProgram, 'aVertexPosition'      );
 
     shadowMapProgram.positionBuffer       = positionBuffer;
     shadowMapProgram.indexBuffer          = indexBuffer;
@@ -311,6 +378,28 @@ function makeShadowMapProgram() {
     enableArrayBuffer( gl, shadowMapProgram.aVertexPosition, shadowMapProgram.positionBuffer );
 
     return shadowMapProgram;
+}
+
+
+
+function makeDepthProgram() {
+
+    // make the shadow map program
+    const depthProgram = makeShaderProgram( gl, vDepthShaderSource, fDepthShaderSource );
+
+    // set vars in the shadow map program
+    depthProgram.uDepthProjectionMatrix   = gl.getUniformLocation( depthProgram, 'uDepthProjectionMatrix' );
+    depthProgram.uModelViewMatrix         = gl.getUniformLocation( depthProgram, 'uModelViewMatrix'       );
+
+    depthProgram.aVertexPosition          = gl.getAttribLocation(  depthProgram, 'aVertexPosition'        );
+
+    depthProgram.positionBuffer           = positionBuffer;
+    depthProgram.indexBuffer              = indexBuffer;
+
+    // enable the vertex attributes
+    enableArrayBuffer( gl, depthProgram.aVertexPosition, depthProgram.positionBuffer );
+
+    return depthProgram;
 }
 
 
@@ -375,17 +464,19 @@ const [gl, canvas] = initgl( "glcanvas" );
 new ResizeObserver( () => shouldRedraw = true ).observe( canvas );
 
 // create the matrices we need
-const uModelMatrix         = mat4.create();
+const uModelMatrix           = mat4.create();
+  
+const uViewMatrix            = mat4.create();
+const uModelViewMatrix       = mat4.create();
+const uProjectionMatrix      = mat4.create();
+const uNormalMatrix          = mat4.create();
+  
+const uSunViewMatrix         = mat4.create();
+const uModelSunViewMatrix    = mat4.create();
+const uSunProjectionMatrix   = mat4.create();
+const uSunVPMatrix           = mat4.create();
 
-const uViewMatrix          = mat4.create();
-const uModelViewMatrix     = mat4.create();
-const uProjectionMatrix    = mat4.create();
-const uNormalMatrix        = mat4.create();
-
-const uSunViewMatrix       = mat4.create();
-const uModelSunViewMatrix  = mat4.create();
-const uSunProjectionMatrix = mat4.create();
-const uSunVPMatrix         = mat4.create();
+const uDepthProjectionMatrix = mat4.create();
 
 const uViewPos = [0, 0, 90];
 const uSunPos  = [100, 100, 100];
@@ -411,6 +502,10 @@ const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSi
 
 // create the ambient occlusion program and framebuffer
 const ambientOcclusionFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE2, gl.TEXTURE3 );
+
+// create the depth program and framebuffer
+const depthProgram = makeDepthProgram();
+const depthFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE4, gl.TEXTURE5 );
 
 // make and use the render program
 const renderProgram = makeRenderProgram();

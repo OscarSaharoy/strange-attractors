@@ -25,7 +25,6 @@ varying mediump vec4 vNormal;
 
 void main() {
 
-
     vWorldPos   = uModelMatrix * aVertexPosition;
     gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
     vProjectedTexcoord = uSunVPMatrix * vWorldPos;
@@ -149,7 +148,8 @@ void main() {
 `; const vDepthShaderSource = `
 // ==================================================================================================================
 
-uniform mediump mat4 uMVPMatrix;
+uniform mediump mat4 uModelViewMatrix;
+uniform mediump mat4 uDepthProjectionMatrix;
 
 attribute mediump vec4 aVertexPosition;
 
@@ -157,7 +157,7 @@ varying mediump vec4 vLighting;
 
 void main() {
 
-    gl_Position = uMVPMatrix * aVertexPosition;
+    gl_Position = uDepthProjectionMatrix * uModelViewMatrix * aVertexPosition;
 
     mediump float depth = gl_Position.z / gl_Position.w;
     vLighting = vec4( vec3(depth), 1.0 );
