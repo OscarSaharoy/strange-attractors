@@ -1,6 +1,16 @@
 // Oscar Saharoy 2021
 
 
+// master plan for amazing graphics
+// draw as normal with fast renderer
+// but if uniforms havent changed since last frame then
+// start rendering scene to a texture
+// draw again each frame with gl_Position of transformed vertices from vertex shader offset at subpixel level and AO and shadows jittered and blurred
+// then blend this into the already drawn texture to antialias the scene
+// accumulate graphics over a few frames then start displaying the accumulated image once its better than the single pass rendered one
+// rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
+
+
 // map array of points by a mat4
 const mapByMat4 = ( inPoints, M ) => boundingPoints.map( p => vec3.transformMat4(vec3.create(), p, M) );
 
@@ -17,9 +27,13 @@ function drawLoop( gl ) {
     if( !shouldRedraw ) return;
 
     // render graphics
-    renderShadowMap();
-    renderScene();
     // testShadowMap();
+    // testDepthBuffer();
+    renderShadowMap();
+    // renderShadows();
+    // renderDepthBuffer();
+    // renderAmbientOcclusion();
+    renderScene();
 
     shouldRedraw = false;
 }
@@ -58,6 +72,25 @@ function renderShadowMap() {
 
     // use the shadow map program and update its uniforms
     gl.useProgram(shadowMapProgram);
+    updateShadowMapProgramUniforms();
+
+    // render the shadow map
+    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+}
+
+
+
+function renderAmbientOcclusion() {
+
+    // bind and clear the ambient occlusion framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, ambientOcclusionFramebuffer );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+    // update viwport size
+    gl.viewport( 0, 0, canvas.width, canvas.height );
+
+    // use the ambient occlusion program and update its uniforms
+    gl.useProgram( ambientOcclusionProgram );
     updateShadowMapProgramUniforms();
 
     // render the shadow map
