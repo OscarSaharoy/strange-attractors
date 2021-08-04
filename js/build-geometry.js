@@ -1,7 +1,7 @@
 // Oscar Saharoy 2021
 
 
-function calcPointRK4( point ) {
+function calcPointRK4( point, dt ) {
 
     // get current x y and z from the points array
     // and cache the initial values
@@ -32,6 +32,9 @@ function calcPointRK4( point ) {
                       ( dr1[2] + 2*dr2[2] + 2*dr3[2] + dr4[2] ) * dt/6 ];
 
     // add the overall rk4 step onto the start position
+
+    // if the step is too large, calculate again with a smaller dt
+    // if( v3mod(rk4step) > 1 ) return calcPointRK4( point, dt/2 );
 
     return v3add( r0, rk4step );
 }

@@ -122,7 +122,7 @@ function wheel( event ) {
     // if( event.target != document.body ) return;
 
     // adjust the zoom level and update the container
-    const zoomAmount = event.deltaY / 600;
+    const zoomAmount = Math.max( -0.2, event.deltaY / 600 );
 
     vec3.scale( uViewPos, uViewPos, 1 + zoomAmount );
     mat4.lookAt( uViewMatrix, uViewPos, [0,0,0], [0,1,0] );

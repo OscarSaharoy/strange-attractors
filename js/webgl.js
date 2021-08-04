@@ -128,55 +128,55 @@ function createBuffer( gl, target, dataArray ) {
 }
 
 
-function createFramebuffer( gl, width, height ) {
+// function createFramebuffer( gl, width, height ) {
 
-    // create the framebuffer
-    const framebuffer = gl.createFramebuffer();
-    gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
+//     // create the framebuffer
+//     const framebuffer = gl.createFramebuffer();
+//     gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
 
-    // create the texture
-    const texture = gl.createTexture();
-    gl.bindTexture( gl.TEXTURE_2D, texture );
+//     // create the texture
+//     const texture = gl.createTexture();
+//     gl.bindTexture( gl.TEXTURE_2D, texture );
 
-    // texture settings for level 0
-    const level          = 0;
-    const internalFormat = gl.RGBA;
-    const border         = 0;
-    const format         = gl.RGBA;
-    const type           = gl.UNSIGNED_BYTE;
-    const data           = null;
+//     // texture settings for level 0
+//     const level          = 0;
+//     const internalFormat = gl.RGBA;
+//     const border         = 0;
+//     const format         = gl.RGBA;
+//     const type           = gl.UNSIGNED_BYTE;
+//     const data           = null;
  
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                  width, height, border,
-                  format, type, data);
+//     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+//                   width, height, border,
+//                   format, type, data);
 
-    // set the filtering so we don't need mips
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.CLAMP_TO_EDGE );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST       );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST       );
+//     // set the filtering so we don't need mips
+//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.CLAMP_TO_EDGE );
+//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
+//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST       );
+//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST       );
 
-    // create a depth renderbuffer
-    const depthBuffer = gl.createRenderbuffer();
-    gl.bindRenderbuffer( gl.RENDERBUFFER, depthBuffer );
+//     // create a depth renderbuffer
+//     const depthBuffer = gl.createRenderbuffer();
+//     gl.bindRenderbuffer( gl.RENDERBUFFER, depthBuffer );
      
-    // make a depth buffer the same size as the targetTexture
-    gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height );
-    gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer );
+//     // make a depth buffer the same size as the targetTexture
+//     gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height );
+//     gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer );
 
-    // attach the texture as the first color attachment
-    const attachmentPoint = gl.COLOR_ATTACHMENT0;
-    gl.framebufferTexture2D( gl.FRAMEBUFFER, attachmentPoint,
-                             gl.TEXTURE_2D , texture, level );
+//     // attach the texture as the first color attachment
+//     const attachmentPoint = gl.COLOR_ATTACHMENT0;
+//     gl.framebufferTexture2D( gl.FRAMEBUFFER, attachmentPoint,
+//                              gl.TEXTURE_2D , texture, level );
 
-    return [framebuffer, texture, depthBuffer];
-}
+//     return [framebuffer, texture, depthBuffer];
+// }
 
 
-function createShadowMap( gl, width, height ) {
+function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTexUnit=gl.TEXTURE1 ) {
 
-    // set texture unit 0 active
-    gl.activeTexture(gl.TEXTURE0);
+    // set depth texture unit active
+    gl.activeTexture( depthTexUnit );
 
     // create the depth texture
     const depthTexture = gl.createTexture();
@@ -202,8 +202,8 @@ function createShadowMap( gl, width, height ) {
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
 
     // create a framebuffer
-    const depthFramebuffer = gl.createFramebuffer();
-    gl.bindFramebuffer( gl.FRAMEBUFFER, depthFramebuffer );
+    const newFramebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer( gl.FRAMEBUFFER, newFramebuffer );
 
     // setup the framebuffer
     gl.framebufferTexture2D(
@@ -214,12 +214,12 @@ function createShadowMap( gl, width, height ) {
         0                     // mip level
     );
 
-    // set texture unit 1 active
-    gl.activeTexture(gl.TEXTURE1);
+    // set color texture unit active
+    gl.activeTexture( colorTexUnit );
 
     // create an unused color texture of the same size as the depth texture
-    const unusedTexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, unusedTexture);
+    const colorTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, colorTexture);
 
     // setup that texture
     gl.texImage2D(
@@ -244,11 +244,11 @@ function createShadowMap( gl, width, height ) {
         gl.FRAMEBUFFER,        // target
         gl.COLOR_ATTACHMENT0,  // attachment point
         gl.TEXTURE_2D,         // texture target
-        unusedTexture,         // texture
-        0                     // mip level
+        colorTexture,          // texture
+        0                      // mip level
     );
 
-    return [depthFramebuffer, depthTexture];
+    return newFramebuffer;
 }
 
 

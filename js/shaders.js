@@ -77,7 +77,7 @@ mediump float shadowLight() {
 
         mediump vec2 offset = uSampleOffsets[i];
 
-        mediump float projectedDepth = texture2D( uShadowMap, texPos + offset / uShadowMapSize ).r;
+        mediump float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
         outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
     }
 
@@ -135,6 +135,37 @@ void main() {
 
 // ==================================================================================================================
 `; const fShadowShaderSource = `
+// ==================================================================================================================
+
+varying mediump vec4 vLighting;
+
+void main() {
+
+    gl_FragColor = vLighting;
+}
+
+
+// ==================================================================================================================
+`; const vDepthShaderSource = `
+// ==================================================================================================================
+
+uniform mediump mat4 uMVPMatrix;
+
+attribute mediump vec4 aVertexPosition;
+
+varying mediump vec4 vLighting;
+
+void main() {
+
+    gl_Position = uMVPMatrix * aVertexPosition;
+
+    mediump float depth = gl_Position.z / gl_Position.w;
+    vLighting = vec4( vec3(depth), 1.0 );
+}
+
+
+// ==================================================================================================================
+`; const fDepthShaderSource = `
 // ==================================================================================================================
 
 varying mediump vec4 vLighting;

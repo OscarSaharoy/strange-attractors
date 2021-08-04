@@ -50,7 +50,7 @@ function testShadowMap() {
 function renderShadowMap() {
 
     // bind and clear the shadow map framebuffer
-    gl.bindFramebuffer( gl.FRAMEBUFFER, shadowMapDepthFramebuffer );
+    gl.bindFramebuffer( gl.FRAMEBUFFER, shadowMapFramebuffer );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
     // update viwport size
@@ -89,7 +89,7 @@ function updateGeometry() {
     points[0] = start;
 
     // construct the points
-    for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1] );
+    for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1], dt );
 
     // get the centre of the points
     centrePoint  = getCentrePoint( points );
@@ -170,7 +170,7 @@ function updateRenderProgramUniforms() {
                            -0.566027, -0.216651, 
                             0.335398, -0.783654, 
                             0.019074, -0.318522, 
-                           -0.647572,  0.581896 ].map(x => x*7) )
+                           -0.647572,  0.581896 ] )
     );
 
     // bind the shadow map sampler to texture unit 1
@@ -373,9 +373,11 @@ handleCanvasResize( gl, canvas, uProjectionMatrix );
 
 // make the shadow map program and framebuffer
 const shadowMapProgram = makeShadowMapProgram();
-const uShadowMapSize = Math.max(canvas.width*2, canvas.height*2);
-const [shadowMapDepthFramebuffer, shadowMapDepthTexture] = createShadowMap( gl, uShadowMapSize, uShadowMapSize );
-// const [aoDepthFramebuffer, aoDepthTexture]               = createShadowMap( gl, uShadowMapSize, uShadowMapSize, );
+const uShadowMapSize = Math.max(canvas.width, canvas.height);
+const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
+
+// create the ambient occlusion program and framebuffer
+const ambientOcclusionFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE2, gl.TEXTURE3 );
 
 // make and use the render program
 const renderProgram = makeRenderProgram();
