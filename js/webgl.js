@@ -41,15 +41,15 @@ function initgl( canvasID ) {
 }
 
 
-function handleCanvasResize( gl, canvas, projectionMatrix ) {
+function handleCanvasResize( gl, canvas ) {
 
     // link resize function to be called when canvas changes size
-    new ResizeObserver( () => onCanvasResize( gl, canvas, projectionMatrix ) ).observe( canvas );
-    onCanvasResize( gl, canvas, projectionMatrix );
+    new ResizeObserver( () => onCanvasResize( gl, canvas ) ).observe( canvas );
+    onCanvasResize( gl, canvas );
 }
 
 
-function onCanvasResize( gl, canvas, projectionMatrix ) {
+function onCanvasResize( gl, canvas ) {
 
     // set canvas to have 1:1 canvas pixel to screen pixel ratio
     const boundingRect = canvas.getBoundingClientRect();
@@ -60,14 +60,6 @@ function onCanvasResize( gl, canvas, projectionMatrix ) {
 
     // set clip space to match up to canvas corners
     gl.viewport(0, 0, canvas.width, canvas.height);
-    
-    // match the projection matrix to the current aspect ratio
-    const fieldOfView = 45 * Math.PI / 180;
-    const aspect  = canvas.width / canvas.height;
-    const zNear   = 1;
-    const zFar    = 1000.0;
-
-    mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 }
 
 

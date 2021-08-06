@@ -39,6 +39,7 @@ void main() {
 `; const fsSource = ` 
 // ==================================================================================================================
 
+uniform mediump vec3 uViewPos;
 uniform sampler2D uShadowMap;
 uniform mediump float uShadowMapSize;
 uniform mediump vec2 uSampleOffsets[8];
@@ -102,8 +103,7 @@ void main() {
 
     gl_FragColor = light * vec4( vec3(shadowLight()), 1.0 );
 
-    mediump float viewDist = length( vSurfaceToView );
-    // gl_FragColor = mix( clamp(gl_FragColor,0.0,100.0), vec4(1.0,1.0,1.0,1.0), viewDist*0.001 ); // fog
+    // gl_FragColor = mix( clamp(gl_FragColor,0.0,100.0), vec4(1.0,1.0,1.0,1.0), vProjectedTexcoord.z*0.1+0.0 ); // fog
 
     // gamma correction
     gl_FragColor = pow( gl_FragColor, vec4( 1.0/2.2 ) );
@@ -149,7 +149,44 @@ void main() {
 // ==================================================================================================================
 
 uniform mediump mat4 uModelViewMatrix;
-uniform mediump mat4 uDepthProjectionMatrix;
+uniform mediump mat4 uProjectionMatrix;
+uniform mediump mat4 uNormalMatrix;
+
+attribute mediump vec4 aVertexPosition;
+attribute mediump vec3 aVertexNormal;
+
+varying mediump vec4 vLighting;
+varying mediump vec4 vNormal;
+
+void main() {
+
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+
+    mediump float depth = gl_Position.z / gl_Position.w;
+    vLighting = vec4( vec3(depth), 1.0 );
+    vNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
+}
+
+
+// ==================================================================================================================
+`; const fDepthShaderSource = `
+// ==================================================================================================================
+
+varying mediump vec4 vLighting;
+varying mediump vec4 vNormal;
+
+void main() {
+
+    gl_FragColor = vec4( vNormal.xyz, vLighting.r );
+}
+
+
+// ==================================================================================================================
+`; const vAmbientOcclusionShaderSource = `
+// ==================================================================================================================
+
+uniform mediump mat4 uModelViewMatrix;
+uniform mediump mat4 uProjectionMatrix;
 
 attribute mediump vec4 aVertexPosition;
 
@@ -157,7 +194,7 @@ varying mediump vec4 vLighting;
 
 void main() {
 
-    gl_Position = uDepthProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
 
     mediump float depth = gl_Position.z / gl_Position.w;
     vLighting = vec4( vec3(depth), 1.0 );
@@ -165,7 +202,7 @@ void main() {
 
 
 // ==================================================================================================================
-`; const fDepthShaderSource = `
+`; const fAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
 varying mediump vec4 vLighting;
