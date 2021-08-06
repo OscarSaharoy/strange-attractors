@@ -185,19 +185,14 @@ void main() {
 `; const vAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
-uniform mediump mat4 uModelViewMatrix;
-uniform mediump mat4 uProjectionMatrix;
-
 attribute mediump vec4 aVertexPosition;
 
-varying mediump vec4 vLighting;
+varying mediump vec2 vTexPos;
 
 void main() {
 
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-
-    mediump float depth = gl_Position.z / gl_Position.w;
-    vLighting = vec4( vec3(depth), 1.0 );
+    gl_Position = aVertexPosition;
+    vTexPos = aVertexPosition.xy*0.5 + 0.5;
 }
 
 
@@ -205,11 +200,13 @@ void main() {
 `; const fAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
-varying mediump vec4 vLighting;
+uniform sampler2D uDepthMap;
+
+varying mediump vec2 vTexPos;
 
 void main() {
 
-    gl_FragColor = vLighting;
+    gl_FragColor = texture2D( uDepthMap, vTexPos );
 }
 
 

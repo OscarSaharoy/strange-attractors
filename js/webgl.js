@@ -263,3 +263,13 @@ function enableArrayBuffer( gl, attribute, buffer ) {
     // setup the pointer in that array
     gl.vertexAttribPointer( attribute, 3, gl.FLOAT, false, 0, 0 );
 }
+
+
+function useArrayBuffer( gl, attribute, buffer ) {
+
+    // bind the buffer    
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+
+    // setup the pointer in that array
+    gl.vertexAttribPointer( attribute, 3, gl.FLOAT, false, 0, 0 );
+}

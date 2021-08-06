@@ -29,14 +29,17 @@ function drawLoop( gl ) {
     // stop if we don't need to redraw
     if( !shouldRedraw ) return;
 
+    enableArrayBuffer( gl, imageEffectVerts );
+    enableArrayBuffer( gl, imageEffectIdxs  );
+
     // render graphics
     // testShadowMap();
     // renderShadowMap();
     // renderShadows();
-    // renderDepthBuffer();
-    testDepthBuffer();
+    renderDepthBuffer();
+    // testDepthBuffer();
     // renderAmbientOcclusion();
-    // testAmbientOcclusion();
+    testAmbientOcclusion();
     // renderScene();
 
     shouldRedraw = false;
@@ -44,6 +47,10 @@ function drawLoop( gl ) {
 
 
 function renderShadowMap() {
+
+    // use normal geometry buffer and element array buffer
+    useArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, indexBuffer );
 
     // bind and clear the shadow map framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, shadowMapFramebuffer );
@@ -62,6 +69,10 @@ function renderShadowMap() {
 
 
 function testShadowMap() {
+
+    // use normal geometry buffer and element array buffer
+    useArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, indexBuffer );
 
     // swtich to render program to update the uniforms
     gl.useProgram( renderProgram );
@@ -85,6 +96,10 @@ function testShadowMap() {
 
 function renderDepthBuffer() {
 
+    // use normal geometry buffer and element array buffer
+    useArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, indexBuffer );
+
     // bind and clear the depth framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, depthFramebuffer );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
@@ -102,6 +117,10 @@ function renderDepthBuffer() {
 
 
 function testDepthBuffer() {
+
+    // use normal geometry buffer and element array buffer
+    useArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, indexBuffer );
 
     // swtich to render program to update the uniforms
     gl.useProgram( renderProgram );
@@ -137,11 +156,15 @@ function renderAmbientOcclusion() {
     updateAmbientOcclusionProgramUniforms();
 
     // render the occlusion map
-    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+    gl.drawElements( gl.TRIANGLES, 24, gl.UNSIGNED_INT, 0 );
 }
 
 
 function testAmbientOcclusion() {
+
+    // set us to use the image effect vertex positions buffer
+    useArrayBuffer( gl, ambientOcclusionProgram.aVertexPosition, ambientOcclusionProgram.positionBuffer );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, imageEffectIndexBuffer );
 
     // swtich to render program to update the uniforms
     gl.useProgram( renderProgram );
@@ -151,7 +174,7 @@ function testAmbientOcclusion() {
     gl.bindFramebuffer( gl.FRAMEBUFFER, null );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
-    // update viwport size
+    // update viewport size
     gl.viewport( 0, 0, canvas.width, canvas.height );
 
     // use the ambient occlusion program and update its uniforms
@@ -159,11 +182,15 @@ function testAmbientOcclusion() {
     updateAmbientOcclusionProgramUniforms();
 
     // render the occlusion map
-    gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
+    gl.drawElements( gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0 );
 }
 
 
 function renderScene() {
+
+    // use normal geometry buffer and element array buffer
+    useArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, indexBuffer );
 
     // bind and clear the canvas framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, null );
@@ -369,6 +396,9 @@ function updateAmbientOcclusionProgramUniforms() {
         ambientOcclusionProgram.uModelViewMatrix,
         false, uModelViewMatrix
     );
+
+    // bind the depth map sampler to texture unit 3
+    gl.uniform1i( ambientOcclusionProgram.uDepthMap, 3 );
 }
 
 
@@ -458,13 +488,11 @@ function makeAmbientOcclusionProgram() {
     const ambientOcclusionProgram = makeShaderProgram( gl, vAmbientOcclusionShaderSource, fAmbientOcclusionShaderSource );
 
     // set vars in the ambient occlusion program
-    ambientOcclusionProgram.uProjectionMatrix = gl.getUniformLocation( ambientOcclusionProgram, 'uProjectionMatrix' );
-    ambientOcclusionProgram.uModelViewMatrix  = gl.getUniformLocation( ambientOcclusionProgram, 'uModelViewMatrix'  );
+    ambientOcclusionProgram.uDepthMap       = gl.getUniformLocation( ambientOcclusionProgram, 'uDepthMap'       );
+    ambientOcclusionProgram.aVertexPosition = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition' );
 
-    ambientOcclusionProgram.aVertexPosition   = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition'   );
-
-    ambientOcclusionProgram.positionBuffer    = positionBuffer;
-    ambientOcclusionProgram.indexBuffer       = indexBuffer;
+    ambientOcclusionProgram.positionBuffer  = imageEffectPositionBuffer;
+    ambientOcclusionProgram.indexBuffer     = imageEffectIndexBuffer;
 
     // enable the vertex attributes
     enableArrayBuffer( gl, ambientOcclusionProgram.aVertexPosition, ambientOcclusionProgram.positionBuffer );
@@ -527,6 +555,20 @@ let verts  = new Float32Array( (nVerts + 8)*3 );
 let norms  = new Float32Array( (nVerts + 8)*3 );
 let idxs   = new Uint32Array(  (nVerts + 8)*3 );
 
+
+// define arrays for image effect shaders - 1 quad covering screen
+let imageEffectVerts = Float32Array.from(
+    [ -1, -1, 0,
+       1, -1, 0,
+       1,  1, 0,
+      -1,  1, 0 ]
+);
+
+let imageEffectIdxs  = Uint32Array.from(
+    [ 0, 1, 2, 0, 2, 3 ]
+);
+
+
 // get the webgl drawing context and canvas
 const [gl, canvas] = initgl( "glcanvas" );
 
@@ -560,6 +602,10 @@ let boundingPoints = [];
 const positionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , verts );
 const normalBuffer   = createBuffer( gl, gl.ARRAY_BUFFER        , norms );
 const indexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, idxs  );
+
+// make the image effect data buffers
+const imageEffectPositionBuffer = createBuffer( gl, gl.ARRAY_BUFFER        , imageEffectVerts );
+const imageEffectIndexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, imageEffectIdxs  );
 
 // setup the viewpoint and sun viewpoint
 mat4.lookAt( uViewMatrix   , uViewPos, [0,0,0], [0,1,0] );
