@@ -10,6 +10,10 @@
 // accumulate graphics over a few frames then start displaying the accumulated image once its better than the single pass rendered one
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
+// todo: fix end caps
+// near clipping planes based on geometry size
+// fix number of points calculation
+
 
 // map array of points by a mat4
 const mapByMat4 = ( inPoints, M ) => boundingPoints.map( p => vec3.transformMat4(vec3.create(), p, M) );
@@ -496,16 +500,17 @@ mat4.lookAt( uSunViewMatrix, uSunPos , [0,0,0], [0,1,0] );
 handleCanvasResize( gl, canvas, uProjectionMatrix );
 
 // make the shadow map program and framebuffer
-const shadowMapProgram = makeShadowMapProgram();
-const uShadowMapSize = Math.max(canvas.width, canvas.height);
+const shadowMapProgram     = makeShadowMapProgram();
+const uShadowMapSize       = Math.max(canvas.width, canvas.height);
 const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
 
-// create the ambient occlusion program and framebuffer
-const ambientOcclusionFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE2, gl.TEXTURE3 );
-
 // create the depth program and framebuffer
-const depthProgram = makeDepthProgram();
-const depthFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE4, gl.TEXTURE5 );
+const depthProgram     = makeDepthProgram();
+const depthFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE2, gl.TEXTURE3 );
+
+// create the ambient occlusion program and framebuffer
+const ambientOcclusionProgram     = makeAmbientOcclusionProgram();
+const ambientOcclusionFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE4, gl.TEXTURE5 );
 
 // make and use the render program
 const renderProgram = makeRenderProgram();
