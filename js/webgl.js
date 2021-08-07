@@ -120,51 +120,6 @@ function createBuffer( gl, target, dataArray ) {
 }
 
 
-// function createFramebuffer( gl, width, height ) {
-
-//     // create the framebuffer
-//     const framebuffer = gl.createFramebuffer();
-//     gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
-
-//     // create the texture
-//     const texture = gl.createTexture();
-//     gl.bindTexture( gl.TEXTURE_2D, texture );
-
-//     // texture settings for level 0
-//     const level          = 0;
-//     const internalFormat = gl.RGBA;
-//     const border         = 0;
-//     const format         = gl.RGBA;
-//     const type           = gl.UNSIGNED_BYTE;
-//     const data           = null;
- 
-//     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-//                   width, height, border,
-//                   format, type, data);
-
-//     // set the filtering so we don't need mips
-//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.CLAMP_TO_EDGE );
-//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
-//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST       );
-//     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST       );
-
-//     // create a depth renderbuffer
-//     const depthBuffer = gl.createRenderbuffer();
-//     gl.bindRenderbuffer( gl.RENDERBUFFER, depthBuffer );
-     
-//     // make a depth buffer the same size as the targetTexture
-//     gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height );
-//     gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer );
-
-//     // attach the texture as the first color attachment
-//     const attachmentPoint = gl.COLOR_ATTACHMENT0;
-//     gl.framebufferTexture2D( gl.FRAMEBUFFER, attachmentPoint,
-//                              gl.TEXTURE_2D , texture, level );
-
-//     return [framebuffer, texture, depthBuffer];
-// }
-
-
 function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTexUnit=gl.TEXTURE1 ) {
 
     // set depth texture unit active
@@ -256,16 +211,6 @@ function enableArrayBuffer( gl, attribute, buffer ) {
 
     // enable the vertex attribute array
     gl.enableVertexAttribArray( attribute );
-
-    // bind the buffer    
-    gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-
-    // setup the pointer in that array
-    gl.vertexAttribPointer( attribute, 3, gl.FLOAT, false, 0, 0 );
-}
-
-
-function useArrayBuffer( gl, attribute, buffer ) {
 
     // bind the buffer    
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
