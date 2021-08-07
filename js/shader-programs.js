@@ -244,6 +244,16 @@ function updateDepthProgramUniforms() {
 
     // put the MVP matrices into the depth shader program
     gl.uniformMatrix4fv(
+        depthProgram.uModelMatrix,
+        false, uModelMatrix
+    );
+
+    gl.uniformMatrix4fv(
+        depthProgram.uViewMatrix,
+        false, uViewMatrix
+    );
+
+    gl.uniformMatrix4fv(
         depthProgram.uProjectionMatrix,
         false, uProjectionMatrix
     );
@@ -251,11 +261,6 @@ function updateDepthProgramUniforms() {
     gl.uniformMatrix4fv(
         depthProgram.uNormalMatrix,
         false, uNormalMatrix
-    );
-
-    gl.uniformMatrix4fv(
-        depthProgram.uModelViewMatrix,
-        false, uModelViewMatrix
     );
 }
 
@@ -343,9 +348,10 @@ function makeDepthProgram() {
     const depthProgram = makeShaderProgram( gl, vDepthShaderSource, fDepthShaderSource );
 
     // set vars in the depth program
+    depthProgram.uViewMatrix       = gl.getUniformLocation( depthProgram, 'uViewMatrix'       );
+    depthProgram.uModelMatrix      = gl.getUniformLocation( depthProgram, 'uModelMatrix'      );
     depthProgram.uProjectionMatrix = gl.getUniformLocation( depthProgram, 'uProjectionMatrix' );
     depthProgram.uNormalMatrix     = gl.getUniformLocation( depthProgram, 'uNormalMatrix'     );
-    depthProgram.uModelViewMatrix  = gl.getUniformLocation( depthProgram, 'uModelViewMatrix'  );
 
     depthProgram.aVertexPosition   = gl.getAttribLocation(  depthProgram, 'aVertexPosition'   );
 

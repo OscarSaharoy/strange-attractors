@@ -27,14 +27,14 @@ function drawLoop( gl ) {
     if( !shouldRedraw ) return;
 
     // render graphics
+    // renderShadowMap();
     // testShadowMap();
-    renderShadowMap();
     // renderShadows();
-    // renderDepthBuffer();
+    renderDepthBuffer();
     // testDepthBuffer();
     // renderAmbientOcclusion();
-    // testAmbientOcclusion();
-    renderScene();
+    testAmbientOcclusion();
+    // renderScene();
 
     shouldRedraw = false;
 }
