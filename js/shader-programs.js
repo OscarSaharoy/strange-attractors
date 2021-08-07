@@ -1,3 +1,8 @@
+// Oscar Saharoy 2021
+
+// map array of points by a mat4
+const mapByMat4 = ( inPoints, M ) => boundingPoints.map( p => vec3.transformMat4(vec3.create(), p, M) );
+
 
 // too many args
 // better but still wack
@@ -73,19 +78,11 @@ function testDepthBuffer() {
 
 function renderAmbientOcclusion() {
 
-    // bind and clear the ambient occlusion framebuffer
-    gl.bindFramebuffer( gl.FRAMEBUFFER, ambientOcclusionFramebuffer );
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-
-    // update viewport size
-    gl.viewport( 0, 0, canvas.width, canvas.height );
-
-    // use the ambient occlusion program and update its uniforms
-    gl.useProgram( ambientOcclusionProgram );
-    updateAmbientOcclusionProgramUniforms();
+    // setup the draw call
+    setupDrawCall( ambientOcclusionProgram );
 
     // render the occlusion map
-    gl.drawElements( gl.TRIANGLES, 24, gl.UNSIGNED_INT, 0 );
+    gl.drawElements( gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0 );
 }
 
 
@@ -264,17 +261,14 @@ function updateDepthProgramUniforms() {
 
 function updateAmbientOcclusionProgramUniforms() {
 
+    // get the inverse projection matrix
+    mat4.invert( uInverseProjectionMatrix, uProjectionMatrix );
+
     // put the MVP matrices into the program
     gl.uniformMatrix4fv(
-        ambientOcclusionProgram.uProjectionMatrix,
-        false, uProjectionMatrix
+        ambientOcclusionProgram.uInverseProjectionMatrix,
+        false, uInverseProjectionMatrix
     );
-
-    gl.uniformMatrix4fv(
-        ambientOcclusionProgram.uModelViewMatrix,
-        false, uModelViewMatrix
-    );
-
     // bind the depth map sampler to texture unit 3
     gl.uniform1i( ambientOcclusionProgram.uDepthMap, 3 );
 }
@@ -378,11 +372,13 @@ function makeAmbientOcclusionProgram() {
     const ambientOcclusionProgram = makeShaderProgram( gl, vAmbientOcclusionShaderSource, fAmbientOcclusionShaderSource );
 
     // set vars in the ambient occlusion program
-    ambientOcclusionProgram.uDepthMap       = gl.getUniformLocation( ambientOcclusionProgram, 'uDepthMap'       );
-    ambientOcclusionProgram.aVertexPosition = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition' );
+    ambientOcclusionProgram.uInverseProjectionMatrix = gl.getUniformLocation( ambientOcclusionProgram, 'uInverseProjectionMatrix' );
+    ambientOcclusionProgram.uDepthMap                = gl.getUniformLocation( ambientOcclusionProgram, 'uDepthMap'       );
+    
+    ambientOcclusionProgram.aVertexPosition          = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition' );
 
-    ambientOcclusionProgram.positionBuffer  = imageEffectPositionBuffer;
-    ambientOcclusionProgram.indexBuffer     = imageEffectIndexBuffer;
+    ambientOcclusionProgram.positionBuffer           = imageEffectPositionBuffer;
+    ambientOcclusionProgram.indexBuffer              = imageEffectIndexBuffer;
 
     // enable the vertex attributes
     enableArrayBuffer( gl, ambientOcclusionProgram.aVertexPosition, ambientOcclusionProgram.positionBuffer );

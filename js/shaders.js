@@ -54,7 +54,7 @@ varying mediump vec4 vNormal;
 mediump float shadowLight() {
 
     mediump vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
-    mediump float currentDepth     = projectedTexcoord.z;
+    mediump float currentDepth     = (projectedTexcoord.z)*0.5 + 0.5;
 
     mediump vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
 
@@ -127,7 +127,7 @@ void main() {
     mediump vec4 viewSpacePos = uModelSunViewMatrix  * aVertexPosition;
     gl_Position = uSunProjectionMatrix * viewSpacePos;
 
-    mediump float depth = gl_Position.z / gl_Position.w;
+    mediump float depth = (gl_Position.z / gl_Position.w)*0.5 + 0.5;
     vLighting = vec4( vec3(depth), 1.0 );
 }
 
@@ -185,14 +185,21 @@ void main() {
 `; const vAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
+uniform mediump mat4 uInverseProjectionMatrix;
+
 attribute mediump vec4 aVertexPosition;
 
 varying mediump vec2 vTexPos;
+varying mediump vec3 vViewDir;
 
 void main() {
 
     gl_Position = aVertexPosition;
     vTexPos = aVertexPosition.xy*0.5 + 0.5;
+
+    mediump vec4 viewPos = uInverseProjectionMatrix * aVertexPosition;
+    vViewDir = viewPos.xyz;
+    vViewDir.z *= -1.0;
 }
 
 
@@ -203,10 +210,12 @@ void main() {
 uniform sampler2D uDepthMap;
 
 varying mediump vec2 vTexPos;
+varying mediump vec3 vViewDir;
 
 void main() {
 
-    gl_FragColor = texture2D( uDepthMap, vTexPos );
+    // mediump vec3 worldPos = 
+    gl_FragColor = vec4( normalize(vViewDir), 1.0);
 }
 
 

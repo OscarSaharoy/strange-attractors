@@ -12,10 +12,7 @@
 
 // todo: fix end caps
 // fix number of points calculation
-
-
-// map array of points by a mat4
-const mapByMat4 = ( inPoints, M ) => boundingPoints.map( p => vec3.transformMat4(vec3.create(), p, M) );
+// ray tracing??
 
 
 function drawLoop( gl ) {
@@ -29,18 +26,15 @@ function drawLoop( gl ) {
     // stop if we don't need to redraw
     if( !shouldRedraw ) return;
 
-    enableArrayBuffer( gl, imageEffectVerts );
-    enableArrayBuffer( gl, imageEffectIdxs  );
-
     // render graphics
     // testShadowMap();
-    // renderShadowMap();
+    renderShadowMap();
     // renderShadows();
-    renderDepthBuffer();
+    // renderDepthBuffer();
     // testDepthBuffer();
     // renderAmbientOcclusion();
-    testAmbientOcclusion();
-    // renderScene();
+    // testAmbientOcclusion();
+    renderScene();
 
     shouldRedraw = false;
 }
@@ -55,7 +49,7 @@ function updateGeometry() {
     for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1], dt );
 
     // get the centre of the points
-    centrePoint  = getCentrePoint( points );
+    centrePoint = getCentrePoint( points );
 
     // shift all the points by centrePoint to centre the geometry at the origin
     points.forEach( p => vec3.sub(p, p, centrePoint) );
@@ -151,19 +145,18 @@ handleCanvasResize( gl, canvas );
 new ResizeObserver( () => shouldRedraw = true ).observe( canvas );
 
 // create the matrices we need
-const uModelMatrix           = mat4.create();
+const uModelMatrix             = mat4.create();
+const uViewMatrix              = mat4.create();
+const uModelViewMatrix         = mat4.create();
+const uProjectionMatrix        = mat4.create();
+const uNormalMatrix            = mat4.create();
   
-const uViewMatrix            = mat4.create();
-const uModelViewMatrix       = mat4.create();
-const uProjectionMatrix      = mat4.create();
-const uNormalMatrix          = mat4.create();
-  
-const uSunViewMatrix         = mat4.create();
-const uModelSunViewMatrix    = mat4.create();
-const uSunProjectionMatrix   = mat4.create();
-const uSunVPMatrix           = mat4.create();
+const uSunViewMatrix           = mat4.create();
+const uModelSunViewMatrix      = mat4.create();
+const uSunProjectionMatrix     = mat4.create();
+const uSunVPMatrix             = mat4.create();
 
-const uDepthProjectionMatrix = mat4.create();
+const uInverseProjectionMatrix = mat4.create();
 
 const uViewPos = [0, 0, 90];
 const uSunPos  = [100, 100, 100];

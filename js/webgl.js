@@ -17,12 +17,17 @@ function initgl( canvasID ) {
 
     if( !gl.getExtension('WEBGL_depth_texture') )
 
-        return console.log( "WebGL extension WEBGL_depth_texture not supported :( shadows are off" );
+        return console.log( "WebGL extension WEBGL_depth_texture not supported :(" );
 
 
     if( !gl.getExtension('OES_texture_float') )
 
         return console.log( "WebGL extension OES_texture_float not supported :(" );
+
+
+    if( !gl.getExtension('OES_texture_float_linear') )
+
+        return console.log( "WebGL extension OES_texture_float_linear not supported :(" );
 
 
     // set the background to transparent
@@ -177,12 +182,12 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
         height,
         0,
         gl.RGBA,
-        gl.FLOAT,
+        gl.FLOAT, // can change to gl.FLOAT for nicer or gl.UNSIGNED_BYTE for faster
         null
     );
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
      
