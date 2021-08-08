@@ -26,6 +26,8 @@ function drawLoop( gl ) {
     // stop if we don't need to redraw
     if( !shouldRedraw ) return;
 
+    updateMVPMatrices();
+
     // render graphics
     // renderShadowMap();
     // testShadowMap();
@@ -58,7 +60,7 @@ function updateGeometry() {
     boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=sharpEdges );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );

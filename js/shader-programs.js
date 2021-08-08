@@ -110,7 +110,7 @@ function renderScene() {
 }
 
 
-function updateRenderProgramUniforms() {
+function updateMVPMatrices() {
 
     // update the modelView matrix
     mat4.mul( uModelViewMatrix, uViewMatrix, uModelMatrix );
@@ -119,19 +119,51 @@ function updateRenderProgramUniforms() {
     mat4.invert( uNormalMatrix, uModelViewMatrix );
     mat4.transpose( uNormalMatrix, uNormalMatrix );
 
-     // get the centre point in world space to point the sun at
-    const pointsCentre = getCentrePoint( mapByMat4( boundingPoints, uModelMatrix ) );
-
     // project bounding points to view space and get bounding box of them
     const viewSpaceBBox = getBBox( mapByMat4( boundingPoints, uModelViewMatrix ) );
 
     // set the near and far clipping planes
-    const zMid  = ( viewSpaceBBox.front + viewSpaceBBox.back ) / 2;
-    const zNear =  - zMid + ( zMid - viewSpaceBBox.front ) * 1.1;
-    const zFar  =  - zMid + ( zMid - viewSpaceBBox.back  ) * 1.1;
+    let zMid  = ( viewSpaceBBox.front + viewSpaceBBox.back ) / 2;
+    let zNear =  - zMid + ( zMid - viewSpaceBBox.front ) * 1.1;
+    let zFar  =  - zMid + ( zMid - viewSpaceBBox.back  ) * 1.1;
 
     // generate the projection matrix
     mat4.perspective( uProjectionMatrix, 45 * Math.PI / 180, canvas.width/canvas.height, Math.max(zNear, 1), zFar );
+
+    // get the inverse projection matrix
+    mat4.invert( uInverseProjectionMatrix, uProjectionMatrix );
+
+
+    // update the sun projection matrix to fit the geometry to the shadow map
+
+    // get the centre point in world space to point the sun at
+    const pointsCentre = getCentrePoint( mapByMat4( boundingPoints, uModelMatrix ) );
+
+    // project bounding points to sun's view space and get bounding box of them
+    const sunViewSpaceBBox = getBBox( mapByMat4( boundingPoints, uModelSunViewMatrix ) );
+
+    // calcuLate the required field of view and aspect
+    const viewDist      = v3mod( v3sub(uSunPos, pointsCentre) );
+    const verticalFOV   = Math.atan( Math.abs(sunViewSpaceBBox.top - sunViewSpaceBBox.bottom) / 2 / viewDist ) * 2.2
+    const horizontalFOV = Math.atan( Math.abs(sunViewSpaceBBox.right - sunViewSpaceBBox.left) / 2 / viewDist ) * 2.2
+    const aspect        = horizontalFOV / verticalFOV;
+
+    // set the near and far clipping planes
+    zMid  = ( sunViewSpaceBBox.front + sunViewSpaceBBox.back ) / 2;
+    zNear =  - zMid + ( zMid - sunViewSpaceBBox.front ) * 1.1;
+    zFar  =  - zMid + ( zMid - sunViewSpaceBBox.back  ) * 1.1;
+
+    // generate the projection matrix
+    mat4.perspective( uSunProjectionMatrix, verticalFOV, aspect, zNear, zFar );
+
+    // update the sun mvp matrices
+    mat4.lookAt( uSunViewMatrix, uSunPos, pointsCentre, [0,1,0] );
+    mat4.mul( uModelSunViewMatrix, uSunViewMatrix, uModelMatrix );
+    mat4.mul( uSunVPMatrix, uSunProjectionMatrix, uSunViewMatrix );
+}
+
+
+function updateRenderProgramUniforms() {
 
     // put all the uniforms into the render program
 
@@ -194,33 +226,6 @@ function updateRenderProgramUniforms() {
 
 function updateShadowMapProgramUniforms() {
 
-    // update the sun projection matrix to fit the geometry to the shadow map
-
-    // get the centre point in world space to point the sun at
-    const pointsCentre = getCentrePoint( mapByMat4( boundingPoints, uModelMatrix ) );
-
-    // project bounding points to sun's view space and get bounding box of them
-    const sunViewSpaceBBox = getBBox( mapByMat4( boundingPoints, uModelSunViewMatrix ) );
-
-    // calcuLate the required field of view and aspect
-    const viewDist      = v3mod( v3sub(uSunPos, pointsCentre) );
-    const verticalFOV   = Math.atan( Math.abs(sunViewSpaceBBox.top - sunViewSpaceBBox.bottom) / 2 / viewDist ) * 2.2
-    const horizontalFOV = Math.atan( Math.abs(sunViewSpaceBBox.right - sunViewSpaceBBox.left) / 2 / viewDist ) * 2.2
-    const aspect        = horizontalFOV / verticalFOV;
-
-    // set the near and far clipping planes
-    const zMid  = ( sunViewSpaceBBox.front + sunViewSpaceBBox.back ) / 2;
-    const zNear =  - zMid + ( zMid - sunViewSpaceBBox.front ) * 1.1;
-    const zFar  =  - zMid + ( zMid - sunViewSpaceBBox.back  ) * 1.1;
-
-    // generate the projection matrix
-    mat4.perspective( uSunProjectionMatrix, verticalFOV, aspect, zNear, zFar );
-
-    // update the sun mvp matrices
-    mat4.lookAt( uSunViewMatrix, uSunPos, pointsCentre, [0,1,0] );
-    mat4.mul( uModelSunViewMatrix, uSunViewMatrix, uModelMatrix );
-    mat4.mul( uSunVPMatrix, uSunProjectionMatrix, uSunViewMatrix );
-
     // put all the uniforms into the shadow map program
 
     gl.uniform3fv(
@@ -266,16 +271,31 @@ function updateDepthProgramUniforms() {
 
 function updateAmbientOcclusionProgramUniforms() {
 
-    // get the inverse projection matrix
-    mat4.invert( uInverseProjectionMatrix, uProjectionMatrix );
-
     // put the MVP matrices into the program
     gl.uniformMatrix4fv(
         ambientOcclusionProgram.uInverseProjectionMatrix,
         false, uInverseProjectionMatrix
     );
+
+    gl.uniformMatrix4fv(
+        ambientOcclusionProgram.uProjectionMatrix,
+        false, uProjectionMatrix
+    );
+
     // bind the depth map sampler to texture unit 3
     gl.uniform1i( ambientOcclusionProgram.uDepthMap, 3 );
+
+    gl.uniform3fv(
+        ambientOcclusionProgram.uSampleOffsets,
+        new Float32Array( [ 0.28,  0.02, 0.70,
+                           -0.79, -0.94, 0.05,
+                            0.92,  0.41, 0.30,
+                           -0.16,  0.55, 0.70,
+                           -0.56, -0.21, 0.50,
+                            0.33, -0.78, 0.10,
+                            0.01, -0.31, 0.90,
+                           -0.64,  0.58, 0.40 ] )
+    );
 }
 
 
@@ -379,9 +399,11 @@ function makeAmbientOcclusionProgram() {
 
     // set vars in the ambient occlusion program
     ambientOcclusionProgram.uInverseProjectionMatrix = gl.getUniformLocation( ambientOcclusionProgram, 'uInverseProjectionMatrix' );
-    ambientOcclusionProgram.uDepthMap                = gl.getUniformLocation( ambientOcclusionProgram, 'uDepthMap'       );
+    ambientOcclusionProgram.uProjectionMatrix        = gl.getUniformLocation( ambientOcclusionProgram, 'uProjectionMatrix'        );
+    ambientOcclusionProgram.uSampleOffsets           = gl.getUniformLocation( ambientOcclusionProgram, 'uSampleOffsets'           );
+    ambientOcclusionProgram.uDepthMap                = gl.getUniformLocation( ambientOcclusionProgram, 'uDepthMap'                );
     
-    ambientOcclusionProgram.aVertexPosition          = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition' );
+    ambientOcclusionProgram.aVertexPosition          = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition'          );
 
     ambientOcclusionProgram.positionBuffer           = imageEffectPositionBuffer;
     ambientOcclusionProgram.indexBuffer              = imageEffectIndexBuffer;
