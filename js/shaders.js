@@ -14,7 +14,7 @@ uniform mediump mat4 uProjectionMatrix;
 uniform mediump mat4 uSunVPMatrix;
 
 attribute mediump vec4 aVertexPosition;
-attribute mediump vec3 aVertexNormal;
+attribute mediump vec4 aVertexNormal;
 
 varying mediump vec4 vWorldPos;
 varying mediump vec4 vProjectedTexcoord;
@@ -32,7 +32,7 @@ void main() {
 
     vSurfaceToSun  = uSunPos  - vWorldPos.xyz;
     vSurfaceToView = uViewPos - vWorldPos.xyz;
-    vNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
+    vNormal = uNormalMatrix * aVertexNormal;
     vTexPos = gl_Position.xy/gl_Position.w * 0.5 + 0.5;
 }
 
@@ -98,9 +98,9 @@ void main() {
 
     specular = clamp( specular, 0.0, 10000.0 );
 
-    mediump float light = ( 0.5*diffuse + 0.7*pow( specular, 60.0 ) + 0.25*ambient) * shadow + 0.01*ambient ;
+    mediump float light = ( 0.7*diffuse + 0.7*pow( specular, 60.0 ) + 0.7*ambient) * shadow + 0.01*ambient ;
 
-    gl_FragColor = vec4( material * light, 1.0 );
+    gl_FragColor = vec4( material * light * 0.7, 1.0 );
 
     // gl_FragColor = mix( clamp(gl_FragColor,0.0,100.0), vec4(1.0,1.0,1.0,1.0), vProjectedTexcoord.z*0.1+0.0 ); // fog
 
@@ -155,7 +155,7 @@ uniform mediump mat4 uProjectionMatrix;
 uniform mediump mat4 uNormalMatrix;
 
 attribute mediump vec4 aVertexPosition;
-attribute mediump vec3 aVertexNormal;
+attribute mediump vec4 aVertexNormal;
 
 varying mediump vec4 vLighting;
 varying mediump vec4 vNormal;
@@ -165,7 +165,7 @@ void main() {
     mediump vec4 viewPos = uViewMatrix * uModelMatrix * aVertexPosition;
     gl_Position = uProjectionMatrix * viewPos;
 
-    vNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
+    vNormal = uNormalMatrix * aVertexNormal;
     mediump float depth = length( viewPos.xyz );
     vLighting = vec4( vNormal.xyz, depth );
 }
@@ -217,14 +217,37 @@ uniform mediump vec3 uSampleOffsets[8];
 varying mediump vec2 vTexPos;
 varying mediump vec3 vViewDir;
 
+
 mediump float rand( mediump float offset ) {
 
     return fract( sin(dot(vTexPos + offset, vec2(12.9898, 78.233))) * 43758.5453 );
 }
 
+
+// mediump float shadowLight() {
+
+//     mediump vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
+//     mediump float currentDepth     = projectedTexcoord.z;
+
+//     mediump vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
+
+//     mediump float outval = 0.0;
+
+//     for( int i = 0; i < 8; ++i ) {
+
+//         mediump vec2 offset = uSampleOffsets[i].xy + (rand()-0.5)*0.4;
+
+//         mediump float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
+//         outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
+//     }
+
+//     return outval;
+// }
+
+
 void main() {
 
-    mediump float aoRadius = 0.4;
+    mediump float aoRadius = 0.2;
 
     mediump vec4 bufferSample = texture2D( uDepthMap, vTexPos );
     mediump vec3 viewPos = normalize(vViewDir) * bufferSample.w;
@@ -239,19 +262,19 @@ void main() {
     mediump mat3 TBN       = mat3(tangent, bitangent, viewSpaceNormal);
 
     mediump float occlusion = 0.0;
+    mediump vec3 samplePos;
 
-    for( int i = 0; i < 8; ++i ) { 
+    for( int i = 0; i < 8; ++i ) {
 
-        mediump vec3 samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius;
+        samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius;
 
         mediump vec4 offset = uProjectionMatrix * vec4( samplePos, 1.0 );
         offset = offset / offset.w * 0.5 + 0.5;
 
         mediump float sampleDepth = texture2D( uDepthMap, offset.xy ).w;
 
-        if( bufferSample.w - sampleDepth > 30.0 ) occlusion += 1.0/8.0;
-
-        occlusion += (sampleDepth >= bufferSample.w ? 1.0 : 0.0) / 8.0;
+        mediump float rangeCheck = smoothstep(0.0, 1.0, aoRadius / abs(bufferSample.w - sampleDepth));
+        occlusion += (sampleDepth >= bufferSample.w || sampleDepth == 0.0 ? 1.0 : 0.0) / 8.0;
     }  
 
     // gl_FragColor = vec4( vec3(bufferSample.w / 100.0), 1.0 );
