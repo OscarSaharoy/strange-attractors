@@ -45,7 +45,8 @@ function testShadowMap() {
     updateRenderProgramUniforms();
 
     // setup the shadows draw call
-    setupDrawCall( shadowMapProgram, renderToCanvas=true );
+    setupDrawCall( shadowMapProgram, renderToCanvas=true,
+                   viewportSizeX=uShadowMapSize, viewportSizeY=uShadowMapSize );
 
     // render the shadow map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
@@ -55,7 +56,8 @@ function testShadowMap() {
 function renderDepthBuffer() {
 
     // setup the depth draw call
-    setupDrawCall( depthProgram );
+    setupDrawCall( depthProgram, renderToCanvas=false,
+                   viewportSizeX=uShadowMapSize, viewportSizeY=uShadowMapSize );
 
     // render the depth map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
@@ -65,7 +67,8 @@ function renderDepthBuffer() {
 function testDepthBuffer() {
 
     // swtich to render program to update the uniforms
-    gl.useProgram( renderProgram );
+    gl.useProgram( renderProgram, renderToCanvas=true,
+                   viewportSizeX=uShadowMapSize, viewportSizeY=uShadowMapSize );
     updateRenderProgramUniforms();
 
     // setup the depth draw call
@@ -79,7 +82,8 @@ function testDepthBuffer() {
 function renderAmbientOcclusion() {
 
     // setup the draw call
-    setupDrawCall( ambientOcclusionProgram );
+    setupDrawCall( ambientOcclusionProgram, renderToCanvas=false,
+                   viewportSizeX=uShadowMapSize, viewportSizeY=uShadowMapSize );
 
     // render the occlusion map
     gl.drawElements( gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0 );
@@ -221,6 +225,8 @@ function updateRenderProgramUniforms() {
 
     // bind the shadow map sampler to texture unit 1
     gl.uniform1i( renderProgram.uShadowMap, 1 );
+
+    gl.uniform1i( renderProgram.uOcclusionMap, 5 );
 }
 
 
@@ -313,6 +319,7 @@ function makeRenderProgram() {
     renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
     renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram, 'uSunVPMatrix'      );
     renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram, 'uShadowMap'        );
+    renderProgram.uOcclusionMap     = gl.getUniformLocation( renderProgram, 'uOcclusionMap'     );
     renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram, 'uShadowMapSize'    );
     renderProgram.uSampleOffsets    = gl.getUniformLocation( renderProgram, 'uSampleOffsets'    );
 

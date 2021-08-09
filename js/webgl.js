@@ -148,10 +148,10 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
     );
 
     // set the filtering so we don't need mips
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST       );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST       );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.CLAMP_TO_EDGE );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.CLAMP_TO_EDGE );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST         );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST         );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S    , gl.MIRRORED_REPEAT );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T    , gl.MIRRORED_REPEAT );
 
     // create a framebuffer
     const newFramebuffer = gl.createFramebuffer();

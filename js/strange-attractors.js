@@ -23,20 +23,21 @@ function drawLoop( gl ) {
     // run the pan and zoom routine (canvas-control.js)
     panAndZoom();
 
+    // update all the normal and projection matrices etc
+    updateMVPMatrices();
+
     // stop if we don't need to redraw
     if( !shouldRedraw ) return;
 
-    updateMVPMatrices();
-
     // render graphics
-    // renderShadowMap();
+
+    renderShadowMap();
     // testShadowMap();
-    // renderShadows();
     renderDepthBuffer();
     // testDepthBuffer();
-    // renderAmbientOcclusion();
-    testAmbientOcclusion();
-    // renderScene();
+    renderAmbientOcclusion();
+    // testAmbientOcclusion();
+    renderScene();
 
     shouldRedraw = false;
 }
@@ -60,7 +61,7 @@ function updateGeometry() {
     boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
@@ -184,11 +185,11 @@ const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSi
 const shadowMapProgram     = makeShadowMapProgram();
 
 // create the depth program and framebuffer
-const depthFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE2, gl.TEXTURE3 );
+const depthFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE2, gl.TEXTURE3 );
 const depthProgram     = makeDepthProgram();
 
 // create the ambient occlusion program and framebuffer
-const ambientOcclusionFramebuffer = createFramebuffer( gl, canvas.width, canvas.height, gl.TEXTURE4, gl.TEXTURE5 );
+const ambientOcclusionFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE4, gl.TEXTURE5 );
 const ambientOcclusionProgram     = makeAmbientOcclusionProgram();
 
 // make and use the render program
@@ -202,6 +203,6 @@ updateGeometry();
 drawLoop( gl );
 
 // initial scene draw
-renderShadowMap();
-renderShadowMap();
-renderScene();
+// renderShadowMap();
+// renderShadowMap();
+// renderScene();
