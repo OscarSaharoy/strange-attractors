@@ -5,23 +5,25 @@
 const vsSource = `
 // ==================================================================================================================
 
-uniform mediump vec3 uViewPos;
-uniform mediump vec3 uSunPos;
-uniform mediump mat4 uNormalMatrix;
-uniform mediump mat4 uModelMatrix;
-uniform mediump mat4 uModelViewMatrix;
-uniform mediump mat4 uProjectionMatrix;
-uniform mediump mat4 uSunVPMatrix;
+precision mediump float;
 
-attribute mediump vec4 aVertexPosition;
-attribute mediump vec4 aVertexNormal;
+uniform vec3 uViewPos;
+uniform vec3 uSunPos;
+uniform mat4 uNormalMatrix;
+uniform mat4 uModelMatrix;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+uniform mat4 uSunVPMatrix;
 
-varying mediump vec4 vWorldPos;
-varying mediump vec4 vProjectedTexcoord;
-varying mediump vec3 vSurfaceToSun;
-varying mediump vec3 vSurfaceToView;
-varying mediump vec4 vNormal;
-varying mediump vec2 vTexPos;
+attribute vec4 aVertexPosition;
+attribute vec4 aVertexNormal;
+
+varying vec4 vWorldPos;
+varying vec4 vProjectedTexcoord;
+varying vec3 vSurfaceToSun;
+varying vec3 vSurfaceToView;
+varying vec4 vNormal;
+varying vec2 vTexPos;
 
 
 void main() {
@@ -41,40 +43,42 @@ void main() {
 `; const fsSource = ` 
 // ==================================================================================================================
 
-uniform mediump vec3 uViewPos;
+precision mediump float;
+
+uniform vec3 uViewPos;
 uniform sampler2D uShadowMap;
 uniform sampler2D uOcclusionMap;
-uniform mediump float uShadowMapSize;
-uniform mediump vec2 uSampleOffsets[8];
+uniform float uShadowMapSize;
+uniform vec2 uSampleOffsets[8];
 
-varying mediump vec4 vWorldPos;
-varying mediump vec4 vProjectedTexcoord;
-varying mediump vec3 vSurfaceToSun;
-varying mediump vec3 vSurfaceToView;
-varying mediump vec4 vNormal;
-varying mediump vec2 vTexPos;
+varying vec4 vWorldPos;
+varying vec4 vProjectedTexcoord;
+varying vec3 vSurfaceToSun;
+varying vec3 vSurfaceToView;
+varying vec4 vNormal;
+varying vec2 vTexPos;
 
 
-mediump float rand() {
+float rand() {
 
     return fract( sin(dot(vWorldPos, vec4(19.9898, 75.233, -67.231, 31.2345))) * 43458.5453 );
 }
 
 
-mediump float shadowLight() {
+float shadowLight() {
 
-    mediump vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
-    mediump float currentDepth     = projectedTexcoord.z;
+    vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
+    float currentDepth     = projectedTexcoord.z;
 
-    mediump vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
+    vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
 
-    mediump float outval = 0.0;
+    float outval = 0.0;
 
     for( int i = 0; i < 8; ++i ) {
 
-        mediump vec2 offset = uSampleOffsets[i] + (rand()-0.5)*0.4;
+        vec2 offset = uSampleOffsets[i] + (rand()-0.5)*0.4;
 
-        mediump float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
+        float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
         outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
     }
 
@@ -84,23 +88,23 @@ mediump float shadowLight() {
 
 void main() {
 
-    mediump vec3 material = vec3(1.0);//vec3(0.2);// vec3( 0.1, 0.4, 0.5 );
+    vec3 material = vec3(1.0);//vec3(0.2);// vec3( 0.1, 0.4, 0.5 );
 
-    mediump vec3 surfaceToSunDir  = normalize(vSurfaceToSun );
-    mediump vec3 surfaceToViewDir = normalize(vSurfaceToView);
+    vec3 surfaceToSunDir  = normalize(vSurfaceToSun );
+    vec3 surfaceToViewDir = normalize(vSurfaceToView);
 
-    mediump vec3 halfway = normalize( surfaceToSunDir + surfaceToViewDir );
+    vec3 halfway = normalize( surfaceToSunDir + surfaceToViewDir );
 
-    mediump float diffuse  = dot( vNormal.xyz, surfaceToSunDir );
-    mediump float specular = dot( vNormal.xyz, halfway         );
-    mediump float ambient  = texture2D( uOcclusionMap, vTexPos ).r;
-    mediump float shadow   = shadowLight();
+    float diffuse  = dot( vNormal.xyz, surfaceToSunDir );
+    float specular = dot( vNormal.xyz, halfway         );
+    float ambient  = texture2D( uOcclusionMap, vTexPos ).r;
+    float shadow   = shadowLight();
 
     specular = clamp( specular, 0.0, 10000.0 );
 
-    mediump float light = ( 0.7*diffuse + 0.7*pow( specular, 60.0 ) + 0.7*ambient) * shadow + 0.01*ambient ;
+    float light = ( 0.7*diffuse + 0.7*pow( specular, 60.0 ) + 0.7*ambient) * shadow + 0.01*ambient ;
 
-    gl_FragColor = vec4( material * light * 0.7, 1.0 );
+    gl_FragColor = vec4( material * light, 1.0 );
 
     // gl_FragColor = mix( clamp(gl_FragColor,0.0,100.0), vec4(1.0,1.0,1.0,1.0), vProjectedTexcoord.z*0.1+0.0 ); // fog
 
@@ -115,20 +119,22 @@ void main() {
 `; const vShadowShaderSource = `
 // ==================================================================================================================
 
-uniform mediump vec3 uSunPos;
-uniform mediump mat4 uModelSunViewMatrix;
-uniform mediump mat4 uSunProjectionMatrix;
+precision mediump float;
 
-attribute mediump vec4 aVertexPosition;
+uniform vec3 uSunPos;
+uniform mat4 uModelSunViewMatrix;
+uniform mat4 uSunProjectionMatrix;
 
-varying mediump vec4 vLighting;
+attribute vec4 aVertexPosition;
+
+varying vec4 vLighting;
 
 void main() {
 
-    mediump vec4 viewSpacePos = uModelSunViewMatrix  * aVertexPosition;
+    vec4 viewSpacePos = uModelSunViewMatrix  * aVertexPosition;
     gl_Position = uSunProjectionMatrix * viewSpacePos;
 
-    mediump float depth = gl_Position.z / gl_Position.w;
+    float depth = gl_Position.z / gl_Position.w;
     vLighting = vec4( vec3(depth), 1.0 );
 }
 
@@ -136,6 +142,8 @@ void main() {
 // ==================================================================================================================
 `; const fShadowShaderSource = `
 // ==================================================================================================================
+
+precision mediump float;
 
 varying mediump vec4 vLighting;
 
@@ -149,24 +157,26 @@ void main() {
 `; const vDepthShaderSource = `
 // ==================================================================================================================
 
-uniform mediump mat4 uViewMatrix;
-uniform mediump mat4 uModelMatrix;
-uniform mediump mat4 uProjectionMatrix;
-uniform mediump mat4 uNormalMatrix;
+precision mediump float;
 
-attribute mediump vec4 aVertexPosition;
-attribute mediump vec4 aVertexNormal;
+uniform mat4 uViewMatrix;
+uniform mat4 uModelMatrix;
+uniform mat4 uProjectionMatrix;
+uniform mat4 uNormalMatrix;
 
-varying mediump vec4 vLighting;
-varying mediump vec4 vNormal;
+attribute vec4 aVertexPosition;
+attribute vec4 aVertexNormal;
+
+varying vec4 vLighting;
+varying vec4 vNormal;
 
 void main() {
 
-    mediump vec4 viewPos = uViewMatrix * uModelMatrix * aVertexPosition;
+    vNormal = normalize( uNormalMatrix * aVertexNormal );
+    vec4 viewPos = uViewMatrix * uModelMatrix * aVertexPosition;
     gl_Position = uProjectionMatrix * viewPos;
 
-    vNormal = uNormalMatrix * aVertexNormal;
-    mediump float depth = length( viewPos.xyz );
+    float depth = length( viewPos.xyz );
     vLighting = vec4( vNormal.xyz, depth );
 }
 
@@ -174,6 +184,8 @@ void main() {
 // ==================================================================================================================
 `; const fDepthShaderSource = `
 // ==================================================================================================================
+
+precision mediump float;
 
 varying mediump vec4 vLighting;
 
@@ -187,20 +199,23 @@ void main() {
 `; const vAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
-uniform mediump mat4 uInverseProjectionMatrix;
+precision mediump float;
 
-attribute mediump vec4 aVertexPosition;
+uniform mat4 uInverseProjectionMatrix;
 
-varying mediump vec2 vTexPos;
-varying mediump vec3 vViewDir;
+attribute vec4 aVertexPosition;
+
+varying vec2 vTexPos;
+varying vec3 vViewDir;
 
 void main() {
 
     gl_Position = aVertexPosition;
     vTexPos = aVertexPosition.xy*0.5 + 0.5;
 
-    mediump vec4 viewPos = uInverseProjectionMatrix * aVertexPosition;
+    vec4 viewPos = uInverseProjectionMatrix * aVertexPosition;
     vViewDir = viewPos.xyz;
+    // vViewDir.z = -vViewDir.z;
 }
 
 
@@ -208,36 +223,38 @@ void main() {
 `; const fAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
+precision mediump float;
+
 // TODO sort out aoRadius and depth difference check size
 
-uniform mediump mat4 uProjectionMatrix;
+uniform mat4 uProjectionMatrix;
 uniform sampler2D uDepthMap;
-uniform mediump vec3 uSampleOffsets[8];
+uniform vec3 uSampleOffsets[8];
 
-varying mediump vec2 vTexPos;
-varying mediump vec3 vViewDir;
+varying vec2 vTexPos;
+varying vec3 vViewDir;
 
 
-mediump float rand( mediump float offset ) {
+float rand( float offset ) {
 
     return fract( sin(dot(vTexPos + offset, vec2(12.9898, 78.233))) * 43758.5453 );
 }
 
 
-// mediump float shadowLight() {
+// float shadowLight() {
 
-//     mediump vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
-//     mediump float currentDepth     = projectedTexcoord.z;
+//     vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
+//     float currentDepth     = projectedTexcoord.z;
 
-//     mediump vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
+//     vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
 
-//     mediump float outval = 0.0;
+//     float outval = 0.0;
 
 //     for( int i = 0; i < 8; ++i ) {
 
-//         mediump vec2 offset = uSampleOffsets[i].xy + (rand()-0.5)*0.4;
+//         vec2 offset = uSampleOffsets[i].xy + (rand()-0.5)*0.4;
 
-//         mediump float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
+//         float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
 //         outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
 //     }
 
@@ -247,39 +264,42 @@ mediump float rand( mediump float offset ) {
 
 void main() {
 
-    mediump float aoRadius = 0.2;
+    float aoRadius = 0.27;
 
-    mediump vec4 bufferSample = texture2D( uDepthMap, vTexPos );
-    mediump vec3 viewPos = normalize(vViewDir) * bufferSample.w;
+    vec4 bufferSample = texture2D( uDepthMap, vTexPos );
+    vec3 viewPos = normalize(vViewDir) * bufferSample.w;
+
+
 
     if( bufferSample == vec4(0.0) ) return;
 
-    mediump vec3 viewSpaceNormal = normalize( bufferSample.xyz );
+    vec3 viewSpaceNormal = normalize( bufferSample.xyz );
 
-    mediump vec3 randomVec = normalize( vec3( rand( -1.0 ), rand( 0.0 ), rand( 1.0 ) ) );
-    mediump vec3 tangent   = normalize( randomVec - viewSpaceNormal * dot(randomVec, viewSpaceNormal) );
-    mediump vec3 bitangent = cross(viewSpaceNormal, tangent);
-    mediump mat3 TBN       = mat3(tangent, bitangent, viewSpaceNormal);
+    vec3 randomVec = vec3(1.0, 0.0, 0.0);//normalize( vec3( rand( -1.0 ), rand( 0.0 ), rand( 1.0 ) ) );
+    vec3 tangent   = normalize( randomVec - viewSpaceNormal * dot(randomVec, viewSpaceNormal) );
+    vec3 bitangent = cross(viewSpaceNormal, tangent);
+    mat3 TBN       = mat3(tangent, bitangent, viewSpaceNormal);
 
-    mediump float occlusion = 0.0;
-    mediump vec3 samplePos;
+    float occlusion = 0.0;
+    vec3 samplePos;
 
     for( int i = 0; i < 8; ++i ) {
 
         samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius;
 
-        mediump vec4 offset = uProjectionMatrix * vec4( samplePos, 1.0 );
+        vec4 offset = uProjectionMatrix * vec4( samplePos, 1.0 );
         offset = offset / offset.w * 0.5 + 0.5;
 
-        mediump float sampleDepth = texture2D( uDepthMap, offset.xy ).w;
+        float sampleDepth = texture2D( uDepthMap, offset.xy ).w;
 
-        mediump float rangeCheck = smoothstep(0.0, 1.0, aoRadius / abs(bufferSample.w - sampleDepth));
-        occlusion += (sampleDepth >= bufferSample.w || sampleDepth == 0.0 ? 1.0 : 0.0) / 8.0;
+        float rangeCheck = smoothstep(0.0, 1.0, aoRadius / abs(bufferSample.w - sampleDepth));
+        occlusion += (sampleDepth >= bufferSample.w - 0.05 || sampleDepth == 0.0 ? 1.0 : 0.0) / 8.0;
     }  
 
     // gl_FragColor = vec4( vec3(bufferSample.w / 100.0), 1.0 );
     gl_FragColor = vec4( vec3(occlusion), 1.0);
-    // gl_FragColor = bufferSample;
+    // gl_FragColor = vec4( viewSpaceNormal, 1.0 );
+    // gl_FragColor = vec4( viewPos, 1.0 );
 }
 
 

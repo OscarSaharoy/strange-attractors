@@ -36,8 +36,8 @@ function drawLoop( gl ) {
     renderDepthBuffer();
     // testDepthBuffer();
     renderAmbientOcclusion();
-    testAmbientOcclusion();
-    // renderScene();
+    // testAmbientOcclusion();
+    renderScene();
 
     shouldRedraw = false;
 }

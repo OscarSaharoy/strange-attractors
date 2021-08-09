@@ -292,14 +292,14 @@ function updateAmbientOcclusionProgramUniforms() {
     gl.uniform1i( ambientOcclusionProgram.uDepthMap, 3 );
 
     gl.uniform3fv(
-        ambientOcclusionProgram.uSampleOffsets,
+        ambientOcclusionProgram.uSampleOffsets, 
         new Float32Array( [ 0.28,  0.02,  0.70,
-                           -0.79, -0.94,  0.75,
-                            0.92,  0.41,  0.60,
+                           -0.39, -0.24,  0.25,
+                            0.92,  0.41,  1.00,
                            -0.16,  0.55,  0.70,
-                           -0.56, -0.21,  0.50,
-                            0.33, -0.78,  0.80,
-                            0.01, -0.31,  0.90,
+                           -0.56, -0.81,  0.50,
+                            0.33, -0.78,  0.60,
+                            0.01, -0.31,  1.20,
                            -0.64,  0.58,  0.40 ] )
     );
 }
