@@ -42,6 +42,9 @@ function initgl( canvasID ) {
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
 
+    // enable alignment to be more flexible - 1 byte
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+
     return [gl, canvas];
 }
 
@@ -58,7 +61,7 @@ function onCanvasResize( gl, canvas ) {
 
     // set canvas to have 1:1 canvas pixel to screen pixel ratio
     const boundingRect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    dpr = window.devicePixelRatio || 1;
 
     canvas.width  = boundingRect.width  * dpr;
     canvas.height = boundingRect.height * dpr;
@@ -122,6 +125,27 @@ function createBuffer( gl, target, dataArray ) {
     fillBuffer( gl, target, buffer, dataArray );
 
     return buffer;
+}
+
+
+function fillBuffer( gl, target, buffer, dataArray ) {
+
+    // bind the buffer and fill the data into it
+    gl.bindBuffer( target, buffer );
+    gl.bufferData( target, dataArray, gl.STATIC_DRAW );
+}
+
+
+function enableArrayBuffer( gl, attribute, buffer ) {
+
+    // enable the vertex attribute array
+    gl.enableVertexAttribArray( attribute );
+
+    // bind the buffer    
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+
+    // setup the pointer in that array
+    gl.vertexAttribPointer( attribute, 3, gl.FLOAT, false, 0, 0 );
 }
 
 
@@ -201,25 +225,4 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
     );
 
     return newFramebuffer;
-}
-
-
-function fillBuffer( gl, target, buffer, dataArray ) {
-
-    // bind the buffer and fill the data into it
-    gl.bindBuffer( target, buffer );
-    gl.bufferData( target, dataArray, gl.STATIC_DRAW );
-}
-
-
-function enableArrayBuffer( gl, attribute, buffer ) {
-
-    // enable the vertex attribute array
-    gl.enableVertexAttribArray( attribute );
-
-    // bind the buffer    
-    gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-
-    // setup the pointer in that array
-    gl.vertexAttribPointer( attribute, 3, gl.FLOAT, false, 0, 0 );
 }

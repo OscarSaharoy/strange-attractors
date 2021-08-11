@@ -201,8 +201,3 @@ updateGeometry();
 
 // start the draw loop
 drawLoop( gl );
-
-// initial scene draw
-// renderShadowMap();
-// renderShadowMap();
-// renderScene();

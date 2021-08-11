@@ -13,6 +13,9 @@ function setupDrawCall( program, renderToCanvas=false, viewportSizeX=null, viewp
     gl.vertexAttribPointer( program.aVertexPosition, 3, gl.FLOAT, false, 0, 0 );
     gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer );
 
+    // set the clearColor to use
+    gl.clearColor( ...( program.clearColor ?? [0,0,0,0] ) );
+
     // bind and clear the framebuffer
     gl.bindFramebuffer( gl.FRAMEBUFFER, renderToCanvas ? null : program.framebuffer );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
@@ -45,8 +48,7 @@ function testShadowMap() {
     updateRenderProgramUniforms();
 
     // setup the shadows draw call
-    setupDrawCall( shadowMapProgram, renderToCanvas=true,
-                   viewportSizeX=uShadowMapSize, viewportSizeY=uShadowMapSize );
+    setupDrawCall( shadowMapProgram, renderToCanvas=true);
 
     // render the shadow map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
@@ -67,8 +69,7 @@ function renderDepthBuffer() {
 function testDepthBuffer() {
 
     // swtich to render program to update the uniforms
-    gl.useProgram( renderProgram, renderToCanvas=true,
-                   viewportSizeX=uShadowMapSize, viewportSizeY=uShadowMapSize );
+    gl.useProgram( renderProgram, renderToCanvas=true);
     updateRenderProgramUniforms();
 
     // setup the depth draw call
@@ -213,13 +214,13 @@ function updateRenderProgramUniforms() {
 
     gl.uniform2fv(
         renderProgram.uSampleOffsets,
-        new Float32Array( [ 0.282571,  0.023957, 
-                           -0.792657, -0.945738, 
-                            0.922361,  0.411756, 
-                           -0.165838,  0.552995, 
-                           -0.566027, -0.216651, 
-                            0.335398, -0.783654, 
-                            0.019074, -0.318522, 
+        new Float32Array( [ 0.282571,  0.023957,
+                           -0.492657, -0.545738,
+                            0.922361,  0.411756,
+                           -0.165838,  0.552995,
+                           -0.566027, -0.216651,
+                            0.335398, -0.783654,
+                            0.019074, -0.318522,
                            -0.647572,  0.581896 ] )
     );
 
@@ -363,6 +364,7 @@ function makeShadowMapProgram() {
     // set additional program data
     shadowMapProgram.uniformUpdateFunc = updateShadowMapProgramUniforms;
     shadowMapProgram.framebuffer       = shadowMapFramebuffer;
+    shadowMapProgram.clearColor        = [ 1.0, 1.0, 1.0, 1.0 ];
 
     return shadowMapProgram;
 }

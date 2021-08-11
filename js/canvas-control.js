@@ -19,6 +19,7 @@ let endToEndVector     = v3zero;
 let lastEndToEndVector = v3zero;
 let skip1Frame         = false;
 let shouldRedraw       = false;
+let dpr                = 1; // vital
 
 
 function setPointerMeanAndSpread() {
@@ -37,7 +38,7 @@ function pointerdown( event ) {
     event.preventDefault();
 
     // add the pointer to pointerPositions and activePointers
-    pointerPositions[event.pointerId] = [event.pageX, -event.pageY, 0];
+    pointerPositions[event.pointerId] = [event.pageX*dpr, -event.pageY*dpr, 0];
     activePointers.push( event.pointerId );
 
     // set the mean pointer position so that we have access to the new meanPointer straight away
@@ -58,7 +59,7 @@ function pointermove( event ) {
     if( !activePointers.includes(event.pointerId) ) return;
 
     // keep track of the pointer pos
-    pointerPositions[event.pointerId] = [ event.pageX, -event.pageY, 0 ];
+    pointerPositions[event.pointerId] = [ event.pageX*dpr, -event.pageY*dpr, 0 ];
 }
 
 function pointerup( event ) {

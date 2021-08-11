@@ -102,7 +102,7 @@ void main() {
 
     specular = clamp( specular, 0.0, 10000.0 );
 
-    float light = ( 0.7*diffuse + 0.7*pow( specular, 60.0 ) + 0.7*ambient) * shadow + 0.01*ambient ;
+    float light = ( 0.7*diffuse + 0.7*pow( specular, 60.0 ) + 0.2*ambient) * shadow + 0.01*ambient ;
 
     gl_FragColor = vec4( material * light, 1.0 );
 
@@ -111,7 +111,7 @@ void main() {
     // gamma correction
     gl_FragColor = pow( gl_FragColor, vec4( 1.0/2.2 ) );
 
-    // gl_FragColor = vec4( vec3(ambient), 1.0 );
+    gl_FragColor = vec4( vec3(ambient), 1.0 );
 }
 
 
@@ -174,10 +174,10 @@ void main() {
 
     vNormal = normalize( uNormalMatrix * aVertexNormal );
     vec4 viewPos = uViewMatrix * uModelMatrix * aVertexPosition;
-    gl_Position = uProjectionMatrix * viewPos;
+    gl_Position  = uProjectionMatrix * viewPos;
 
-    float depth = length( viewPos.xyz );
-    vLighting = vec4( vNormal.xyz, depth );
+    float depth  = length( viewPos.xyz );
+    vLighting    = vec4( vNormal.xyz, depth );
 }
 
 
@@ -264,7 +264,7 @@ float rand( float offset ) {
 
 void main() {
 
-    float aoRadius = 0.27;
+    float aoRadius = 0.5;
 
     vec4 bufferSample = texture2D( uDepthMap, vTexPos );
     vec3 viewPos = normalize(vViewDir) * bufferSample.w;
@@ -275,7 +275,7 @@ void main() {
 
     vec3 viewSpaceNormal = normalize( bufferSample.xyz );
 
-    vec3 randomVec = vec3(1.0, 0.0, 0.0);//normalize( vec3( rand( -1.0 ), rand( 0.0 ), rand( 1.0 ) ) );
+    vec3 randomVec = normalize( vec3( rand( -1.0 ), rand( 0.0 ), rand( 1.0 ) ) );
     vec3 tangent   = normalize( randomVec - viewSpaceNormal * dot(randomVec, viewSpaceNormal) );
     vec3 bitangent = cross(viewSpaceNormal, tangent);
     mat3 TBN       = mat3(tangent, bitangent, viewSpaceNormal);
@@ -285,7 +285,7 @@ void main() {
 
     for( int i = 0; i < 8; ++i ) {
 
-        samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius;
+        samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius * rand(float(i));
 
         vec4 offset = uProjectionMatrix * vec4( samplePos, 1.0 );
         offset = offset / offset.w * 0.5 + 0.5;
