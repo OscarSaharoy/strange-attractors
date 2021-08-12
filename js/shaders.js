@@ -111,7 +111,7 @@ void main() {
     // gamma correction
     gl_FragColor = pow( gl_FragColor, vec4( 1.0/2.2 ) );
 
-    gl_FragColor = vec4( vec3(ambient), 1.0 );
+    // gl_FragColor = vec4( vec3(shadow), 1.0 );
 }
 
 
