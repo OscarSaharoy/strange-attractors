@@ -48,7 +48,7 @@ function testShadowMap() {
     updateRenderProgramUniforms();
 
     // setup the shadows draw call
-    setupDrawCall( shadowMapProgram, renderToCanvas=true);
+    setupDrawCall( shadowMapProgram, renderToCanvas=true );
 
     // render the shadow map
     gl.drawElements( gl.TRIANGLES, nVerts*3, gl.UNSIGNED_INT, 0 );
@@ -69,7 +69,7 @@ function renderDepthBuffer() {
 function testDepthBuffer() {
 
     // swtich to render program to update the uniforms
-    gl.useProgram( renderProgram, renderToCanvas=true);
+    gl.useProgram( renderProgram, renderToCanvas=true );
     updateRenderProgramUniforms();
 
     // setup the depth draw call
@@ -214,13 +214,13 @@ function updateRenderProgramUniforms() {
 
     gl.uniform2fv(
         renderProgram.uSampleOffsets,
-        new Float32Array( [ 0.282571,  0.023957,
-                           -0.492657, -0.545738,
-                            0.922361,  0.411756,
-                           -0.165838,  0.552995,
-                           -0.566027, -0.216651,
-                            0.335398, -0.783654,
-                            0.019074, -0.318522,
+        new Float32Array( [ 0.282571,  0.023957, 
+                           -0.792657, -0.945738, 
+                            0.922361,  0.411756, 
+                           -0.165838,  0.552995, 
+                           -0.566027, -0.216651, 
+                            0.335398, -0.783654, 
+                            0.019074, -0.318522, 
                            -0.647572,  0.581896 ] )
     );
 
@@ -293,15 +293,15 @@ function updateAmbientOcclusionProgramUniforms() {
     gl.uniform1i( ambientOcclusionProgram.uDepthMap, 3 );
 
     gl.uniform3fv(
-        ambientOcclusionProgram.uSampleOffsets, 
-        new Float32Array( [ 0.28,  0.02,  0.70,
-                           -0.39, -0.24,  0.25,
-                            0.92,  0.41,  1.00,
-                           -0.16,  0.55,  0.70,
-                           -0.56, -0.81,  0.50,
-                            0.33, -0.78,  0.60,
-                            0.01, -0.31,  1.20,
-                           -0.64,  0.58,  0.40 ] )
+        ambientOcclusionProgram.uSampleOffsets,
+        new Float32Array( [ 0.28,  0.02, 0.70,
+                           -0.79, -0.94, 0.05,
+                            0.92,  0.41, 0.30,
+                           -0.16,  0.55, 0.70,
+                           -0.56, -0.21, 0.50,
+                            0.33, -0.78, 0.10,
+                            0.01, -0.31, 0.90,
+                           -0.64,  0.58, 0.40 ] )
     );
 }
 
@@ -395,6 +395,7 @@ function makeDepthProgram() {
     // set additional program data
     depthProgram.uniformUpdateFunc = updateDepthProgramUniforms;
     depthProgram.framebuffer       = depthFramebuffer;
+    depthProgram.clearColor        = [ 0.0, 0.0, 0.0, 1e+8 ];
 
     return depthProgram;
 }

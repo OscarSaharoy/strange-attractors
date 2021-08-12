@@ -111,7 +111,7 @@ void main() {
     // gamma correction
     gl_FragColor = pow( gl_FragColor, vec4( 1.0/2.2 ) );
 
-    // gl_FragColor = vec4( vec3(shadow), 1.0 );
+    gl_FragColor = vec4( vec3(ambient), 1.0 );
 }
 
 
@@ -269,13 +269,9 @@ void main() {
     vec4 bufferSample = texture2D( uDepthMap, vTexPos );
     vec3 viewPos = normalize(vViewDir) * bufferSample.w;
 
-
-
-    if( bufferSample == vec4(0.0) ) return;
-
     vec3 viewSpaceNormal = normalize( bufferSample.xyz );
 
-    vec3 randomVec = normalize( vec3( rand( -1.0 ), rand( 0.0 ), rand( 1.0 ) ) );
+    vec3 randomVec = vec3(1.0);//normalize( vec3( rand( -1.0 ), rand( 0.0 ), rand( 1.0 ) ) );
     vec3 tangent   = normalize( randomVec - viewSpaceNormal * dot(randomVec, viewSpaceNormal) );
     vec3 bitangent = cross(viewSpaceNormal, tangent);
     mat3 TBN       = mat3(tangent, bitangent, viewSpaceNormal);
@@ -285,7 +281,7 @@ void main() {
 
     for( int i = 0; i < 8; ++i ) {
 
-        samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius * rand(float(i));
+        samplePos = viewPos + TBN * uSampleOffsets[i] * aoRadius;
 
         vec4 offset = uProjectionMatrix * vec4( samplePos, 1.0 );
         offset = offset / offset.w * 0.5 + 0.5;
@@ -293,7 +289,7 @@ void main() {
         float sampleDepth = texture2D( uDepthMap, offset.xy ).w;
 
         float rangeCheck = smoothstep(0.0, 1.0, aoRadius / abs(bufferSample.w - sampleDepth));
-        occlusion += (sampleDepth >= bufferSample.w - 0.05 || sampleDepth == 0.0 ? 1.0 : 0.0) / 8.0;
+        occlusion += (sampleDepth >= bufferSample.w - 0.05 ? 1.0 : 0.0) / 8.0;
     }  
 
     // gl_FragColor = vec4( vec3(bufferSample.w / 100.0), 1.0 );
