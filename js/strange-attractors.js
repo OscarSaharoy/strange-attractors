@@ -63,6 +63,33 @@ function updateGeometry() {
     // build the geometry from the points
     calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
 
+    if( debugGeom = false ) {
+
+        verts = Float32Array.from( [ 0, 0, 0,
+                                     1, 0, 0,
+                                     1, 1, 0,
+                                     0, 1, 0,
+
+                                     0, 0, 0,
+                                     0, 0, 1,
+                                     1, 0, 1,
+                                     1, 0, 0 ] );
+
+        norms = Float32Array.from( [ 0, 0, 1,
+                                     0, 0, 1,
+                                     0, 0, 1,
+                                     0, 0, 1,
+
+                                     0, 1, 0,
+                                     0, 1, 0,
+                                     0, 1, 0,
+                                     0, 1, 0, ] );
+
+        idxs  = Uint32Array.from(  [ 0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7 ] );
+
+        nVerts = 4;
+    }
+
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
     fillBuffer( gl, gl.ARRAY_BUFFER        , normalBuffer  , norms );
@@ -179,6 +206,10 @@ const imageEffectIndexBuffer    = createBuffer( gl, gl.ELEMENT_ARRAY_BUFFER, ima
 mat4.lookAt( uViewMatrix   , uViewPos, [0,0,0], [0,1,0] );
 mat4.lookAt( uSunViewMatrix, uSunPos , [0,0,0], [0,1,0] );
 
+
+// make and use the render program
+const renderProgram = makeRenderProgram();
+
 // make the shadow map program and framebuffer
 const uShadowMapSize       = Math.max(canvas.width, canvas.height);
 const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
@@ -192,9 +223,6 @@ const depthProgram     = makeDepthProgram();
 const ambientOcclusionFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE4, gl.TEXTURE5 );
 const ambientOcclusionProgram     = makeAmbientOcclusionProgram();
 
-// make and use the render program
-const renderProgram = makeRenderProgram();
-gl.useProgram( renderProgram );
 
 // make the geometry
 updateGeometry();

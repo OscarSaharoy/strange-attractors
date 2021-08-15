@@ -25,7 +25,7 @@ function setupDrawCall( program, renderToCanvas=false, viewportSizeX=null, viewp
                        viewportSizeY ?? canvas.height );
 
     // switch to the program and update the uniforms
-    gl.useProgram( program );
+    gl.useProgram( program.program );
     program.uniformUpdateFunc();
 }
 
@@ -295,7 +295,7 @@ function updateAmbientOcclusionProgramUniforms() {
     gl.uniform3fv(
         ambientOcclusionProgram.uSampleOffsets,
         new Float32Array( [ 0.28,  0.02, 0.70,
-                           -0.79, -0.94, 0.05,
+                           -0.09, -0.04, 0.05,
                             0.92,  0.41, 0.30,
                            -0.16,  0.55, 0.70,
                            -0.56, -0.21, 0.50,
@@ -308,24 +308,26 @@ function updateAmbientOcclusionProgramUniforms() {
 
 function makeRenderProgram() {
 
+    const renderProgram = {};
+
     // make the render program
-    const renderProgram = makeShaderProgram( gl, vsSource, fsSource );
+    renderProgram.program = makeShaderProgram( gl, vsSource, fsSource );
 
     // set vars in the render program
-    renderProgram.uViewPos          = gl.getUniformLocation( renderProgram, 'uViewPos'          );
-    renderProgram.uSunPos           = gl.getUniformLocation( renderProgram, 'uSunPos'           );
-    renderProgram.uNormalMatrix     = gl.getUniformLocation( renderProgram, 'uNormalMatrix'     );
-    renderProgram.uProjectionMatrix = gl.getUniformLocation( renderProgram, 'uProjectionMatrix' );
-    renderProgram.uModelMatrix      = gl.getUniformLocation( renderProgram, 'uModelMatrix'      );
-    renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram, 'uModelViewMatrix'  );
-    renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram, 'uSunVPMatrix'      );
-    renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram, 'uShadowMap'        );
-    renderProgram.uOcclusionMap     = gl.getUniformLocation( renderProgram, 'uOcclusionMap'     );
-    renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram, 'uShadowMapSize'    );
-    renderProgram.uSampleOffsets    = gl.getUniformLocation( renderProgram, 'uSampleOffsets'    );
+    renderProgram.uViewPos          = gl.getUniformLocation( renderProgram.program, 'uViewPos'          );
+    renderProgram.uSunPos           = gl.getUniformLocation( renderProgram.program, 'uSunPos'           );
+    renderProgram.uNormalMatrix     = gl.getUniformLocation( renderProgram.program, 'uNormalMatrix'     );
+    renderProgram.uProjectionMatrix = gl.getUniformLocation( renderProgram.program, 'uProjectionMatrix' );
+    renderProgram.uModelMatrix      = gl.getUniformLocation( renderProgram.program, 'uModelMatrix'      );
+    renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram.program, 'uModelViewMatrix'  );
+    renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram.program, 'uSunVPMatrix'      );
+    renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram.program, 'uShadowMap'        );
+    renderProgram.uOcclusionMap     = gl.getUniformLocation( renderProgram.program, 'uOcclusionMap'     );
+    renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram.program, 'uShadowMapSize'    );
+    renderProgram.uSampleOffsets    = gl.getUniformLocation( renderProgram.program, 'uSampleOffsets'    );
 
-    renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram, 'aVertexPosition'   );
-    renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram, 'aVertexNormal'     );
+    renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram.program, 'aVertexPosition'   );
+    renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram.program, 'aVertexNormal'     );
 
     renderProgram.positionBuffer    = positionBuffer;
     renderProgram.normalBuffer      = normalBuffer;
@@ -345,15 +347,17 @@ function makeRenderProgram() {
 
 function makeShadowMapProgram() {
 
+    const shadowMapProgram = {};
+
     // make the shadow map program
-    const shadowMapProgram = makeShaderProgram( gl, vShadowShaderSource, fShadowShaderSource );
+    shadowMapProgram.program = makeShaderProgram( gl, vShadowShaderSource, fShadowShaderSource );
 
     // set vars in the shadow map program
-    shadowMapProgram.uSunPos              = gl.getUniformLocation( shadowMapProgram, 'uSunPos'              );
-    shadowMapProgram.uSunProjectionMatrix = gl.getUniformLocation( shadowMapProgram, 'uSunProjectionMatrix' );
-    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram, 'uModelSunViewMatrix'  );
+    shadowMapProgram.uSunPos              = gl.getUniformLocation( shadowMapProgram.program, 'uSunPos'              );
+    shadowMapProgram.uSunProjectionMatrix = gl.getUniformLocation( shadowMapProgram.program, 'uSunProjectionMatrix' );
+    shadowMapProgram.uModelSunViewMatrix  = gl.getUniformLocation( shadowMapProgram.program, 'uModelSunViewMatrix'  );
 
-    shadowMapProgram.aVertexPosition      = gl.getAttribLocation(  shadowMapProgram, 'aVertexPosition'      );
+    shadowMapProgram.aVertexPosition      = gl.getAttribLocation(  shadowMapProgram.program, 'aVertexPosition'      );
 
     shadowMapProgram.positionBuffer       = positionBuffer;
     shadowMapProgram.indexBuffer          = indexBuffer;
@@ -373,16 +377,18 @@ function makeShadowMapProgram() {
 
 function makeDepthProgram() {
 
+    const depthProgram = {};
+
     // make the depth program
-    const depthProgram = makeShaderProgram( gl, vDepthShaderSource, fDepthShaderSource );
+    depthProgram.program = makeShaderProgram( gl, vDepthShaderSource, fDepthShaderSource );
 
     // set vars in the depth program
-    depthProgram.uViewMatrix       = gl.getUniformLocation( depthProgram, 'uViewMatrix'       );
-    depthProgram.uModelMatrix      = gl.getUniformLocation( depthProgram, 'uModelMatrix'      );
-    depthProgram.uProjectionMatrix = gl.getUniformLocation( depthProgram, 'uProjectionMatrix' );
-    depthProgram.uNormalMatrix     = gl.getUniformLocation( depthProgram, 'uNormalMatrix'     );
+    depthProgram.uViewMatrix       = gl.getUniformLocation( depthProgram.program, 'uViewMatrix'       );
+    depthProgram.uModelMatrix      = gl.getUniformLocation( depthProgram.program, 'uModelMatrix'      );
+    depthProgram.uProjectionMatrix = gl.getUniformLocation( depthProgram.program, 'uProjectionMatrix' );
+    depthProgram.uNormalMatrix     = gl.getUniformLocation( depthProgram.program, 'uNormalMatrix'     );
 
-    depthProgram.aVertexPosition   = gl.getAttribLocation(  depthProgram, 'aVertexPosition'   );
+    depthProgram.aVertexPosition   = gl.getAttribLocation(  depthProgram.program, 'aVertexPosition'   );
 
     depthProgram.positionBuffer    = positionBuffer;
     depthProgram.normalBuffer      = normalBuffer;
@@ -404,16 +410,18 @@ function makeDepthProgram() {
 
 function makeAmbientOcclusionProgram() {
 
+    const ambientOcclusionProgram = {};
+
     // make the ambient occlusion program
-    const ambientOcclusionProgram = makeShaderProgram( gl, vAmbientOcclusionShaderSource, fAmbientOcclusionShaderSource );
+    ambientOcclusionProgram.program = makeShaderProgram( gl, vAmbientOcclusionShaderSource, fAmbientOcclusionShaderSource );
 
     // set vars in the ambient occlusion program
-    ambientOcclusionProgram.uInverseProjectionMatrix = gl.getUniformLocation( ambientOcclusionProgram, 'uInverseProjectionMatrix' );
-    ambientOcclusionProgram.uProjectionMatrix        = gl.getUniformLocation( ambientOcclusionProgram, 'uProjectionMatrix'        );
-    ambientOcclusionProgram.uSampleOffsets           = gl.getUniformLocation( ambientOcclusionProgram, 'uSampleOffsets'           );
-    ambientOcclusionProgram.uDepthMap                = gl.getUniformLocation( ambientOcclusionProgram, 'uDepthMap'                );
+    ambientOcclusionProgram.uInverseProjectionMatrix = gl.getUniformLocation( ambientOcclusionProgram.program, 'uInverseProjectionMatrix' );
+    ambientOcclusionProgram.uProjectionMatrix        = gl.getUniformLocation( ambientOcclusionProgram.program, 'uProjectionMatrix'        );
+    ambientOcclusionProgram.uSampleOffsets           = gl.getUniformLocation( ambientOcclusionProgram.program, 'uSampleOffsets'           );
+    ambientOcclusionProgram.uDepthMap                = gl.getUniformLocation( ambientOcclusionProgram.program, 'uDepthMap'                );
     
-    ambientOcclusionProgram.aVertexPosition          = gl.getAttribLocation(  ambientOcclusionProgram, 'aVertexPosition'          );
+    ambientOcclusionProgram.aVertexPosition          = gl.getAttribLocation(  ambientOcclusionProgram.program, 'aVertexPosition'          );
 
     ambientOcclusionProgram.positionBuffer           = imageEffectPositionBuffer;
     ambientOcclusionProgram.indexBuffer              = imageEffectIndexBuffer;

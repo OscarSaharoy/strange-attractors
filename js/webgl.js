@@ -45,6 +45,9 @@ function initgl( canvasID ) {
     // enable alignment to be more flexible - 1 byte
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
+    // this is meant to help in some situations
+    gl.enableVertexAttribArray( 0 );
+
     return [gl, canvas];
 }
 
