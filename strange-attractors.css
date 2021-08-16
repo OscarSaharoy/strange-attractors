@@ -60,13 +60,13 @@ h1 {
 	font-size: 3rem;
 }
 
-#recalculate {
-	margin-top: 2rem;
+button {
+	margin: 0.4rem 0;
 	background: var(--grey);
 	color: white;
 	border-radius: 0.32rem;
 	cursor: pointer;
-	width: min-content;
+	width: 12rem;
 	font-weight: 500;
 	padding: 0.8rem 1.2rem;
 	text-align: center;

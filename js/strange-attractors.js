@@ -136,10 +136,11 @@ const vertOffsets2 = [
 
 
 // calculation variables
-const dt      = 5e-3;
-const nPoints = 3500;
-const start   = [ 0.1, -0.1, 8.8 ];
-const points  = new Array(nPoints);
+const dt         = 5e-3;
+const maxRK4Step = 1;
+const nPoints    = 3500;
+const start      = [ 0.1, -0.1, 8.8 ];
+const points     = new Array(nPoints);
 
 
 // controls whether the mesh is rendered with sharp edges
