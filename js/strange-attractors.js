@@ -189,6 +189,7 @@ const uSunVPMatrix             = mat4.create();
 
 const uInverseProjectionMatrix = mat4.create();
 
+const uProfileWidth = width;
 const uViewPos = [0, 0, 90];
 const uSunPos  = [100, 100, 100];
 

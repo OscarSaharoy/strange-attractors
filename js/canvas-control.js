@@ -21,6 +21,8 @@ let skip1Frame         = false;
 let shouldRedraw       = false;
 let dpr                = 1; // vital
 
+let interactiveUIElements = Array.from( document.querySelectorAll( "input, button" ) );
+
 
 function setPointerMeanAndSpread() {
 
@@ -35,7 +37,11 @@ function setPointerMeanAndSpread() {
 
 function pointerdown( event ) {
 
+    if( interactiveUIElements.includes( event.target ) ) return;
+
     event.preventDefault();
+
+    document.activeElement.blur();
 
     // add the pointer to pointerPositions and activePointers
     pointerPositions[event.pointerId] = [event.pageX*dpr, -event.pageY*dpr, 0];
@@ -51,7 +57,7 @@ function pointerdown( event ) {
 
 function pointermove( event ) {
 
-    event.preventDefault();
+    // event.preventDefault();
 
     // if this pointer isn't an active pointer
     // (pointerdown occured over a preventDrag element)

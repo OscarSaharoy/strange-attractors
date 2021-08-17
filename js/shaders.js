@@ -78,7 +78,7 @@ float shadowLight() {
 
         vec2 offset = uSampleOffsets[i] + (rand()-0.5)*0.4;
 
-        float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).r;
+        float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 4e-7 ).r;
         outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
     }
 
@@ -225,8 +225,7 @@ void main() {
 
 precision mediump float;
 
-// TODO sort out aoRadius and depth difference check size of geometry / width
-
+uniform float uProfileWidth;
 uniform mat4 uProjectionMatrix;
 uniform sampler2D uDepthMap;
 uniform vec3 uSampleOffsets[8];
@@ -296,7 +295,7 @@ void main() {
     vec3 bitangent = cross(viewSpaceNormal, tangent);
     mat3 TBN       = mat3(tangent, bitangent, viewSpaceNormal);
 
-    float aoRadius = 0.4;
+    float aoRadius = 0.6*uProfileWidth;
     float ambientLight = 0.0;
 
     // loop over 8 nearby samples
@@ -316,7 +315,10 @@ void main() {
 
         // if the other sample is further from the camera than the geometry is at that location,
         // add nothing to the ambient light
-        ambientLight += otherSampleGeometryDepth >= otherSampleDepth + 0.0 ? 0.125 : 0.0;
+        float depthDelta   = otherSampleGeometryDepth - otherSampleDepth;
+        float depthDropoff = 3.2*uProfileWidth;
+        float passingLight = 0.125 * ( 1.0 + depthDropoff / ( depthDelta - depthDropoff ) );
+        ambientLight      += depthDelta >= 0.0 ? 0.125 : passingLight;
     }
 
     // for( int i = 0; i < 8; ++i ) {
@@ -340,7 +342,7 @@ void main() {
     // gl_FragColor = vec4( vec3(bufferSample.w / 100.0), 1.0 );
     gl_FragColor = vec4( vec3(ambientLight), 1.0);
     // gl_FragColor = vec4( viewSpaceNormal, 1.0 );
-    // gl_FragColor = vec4( viewPos, 1.0 );
+    // gl_FragColor = vec4( uProfileWidth );
 }
 
 

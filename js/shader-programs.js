@@ -278,6 +278,8 @@ function updateDepthProgramUniforms() {
 
 function updateAmbientOcclusionProgramUniforms() {
 
+    gl.uniform1f( ambientOcclusionProgram.uProfileWidth, uProfileWidth );
+
     // put the MVP matrices into the program
     gl.uniformMatrix4fv(
         ambientOcclusionProgram.uInverseProjectionMatrix,
@@ -416,6 +418,7 @@ function makeAmbientOcclusionProgram() {
     ambientOcclusionProgram.program = makeShaderProgram( gl, vAmbientOcclusionShaderSource, fAmbientOcclusionShaderSource );
 
     // set vars in the ambient occlusion program
+    ambientOcclusionProgram.uProfileWidth            = gl.getUniformLocation( ambientOcclusionProgram.program, 'uProfileWidth'            );
     ambientOcclusionProgram.uInverseProjectionMatrix = gl.getUniformLocation( ambientOcclusionProgram.program, 'uInverseProjectionMatrix' );
     ambientOcclusionProgram.uProjectionMatrix        = gl.getUniformLocation( ambientOcclusionProgram.program, 'uProjectionMatrix'        );
     ambientOcclusionProgram.uSampleOffsets           = gl.getUniformLocation( ambientOcclusionProgram.program, 'uSampleOffsets'           );

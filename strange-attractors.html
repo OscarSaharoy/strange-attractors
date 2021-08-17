@@ -13,16 +13,15 @@
 <body>
 
 
-
+<div id="title-container">
+	<h1> strange attractors </h1>
+</div>
 
 <div id="ui">
 	
-	<div id="ui-top">
+	<form id="ui-top" spellcheck="false">
 
-		<h1> strange attractors </h1>
-
-		<button onclick="" style="margin-top: 1.0rem;"> recalculate </button>
-		<button onclick=""> download stl </button>
+		<!-- <h1> strange attractors </h1> -->
 
 		<h2> preset </h2>
 		<p> lorenz </p>
@@ -48,16 +47,19 @@
 		<p> [ x, y, z ] </p>
 
 		<h2> points </h2>
-		<p> 4000 </p>
+		<input type="text" value="4000"> </input>
 
 		<h2> step size (dt) </h2>
-		<p> 5e-3 </p>
+		<input type="text" value="5e-3"> </input>
 
 		<h2> profile width </h2>
-		<p> 1.0 </p>
+		<input type="text" value="1.0"> </input>
 
 		<h2> colour </h2>
-		<p> #ffffff </p>
+		<input type="text" value="#ffffff"> </input>
+
+		<h2> background </h2>
+		<input type="text" value="#ffffff"> </input>
 
 		<h2> shadows </h2>
 		<p> on </p>
@@ -69,12 +71,17 @@
 		<p> off </p>
 
 
-	</div>
+	</form>
 	
-	<div id="space-filler">
+	<div id="ui-bottom">
 		<a id="github-link" href="https://github.com/OscarSaharoy"> @OscarSaharoy on github </a>
 	</div>
 
+</div>
+	
+<div id="ui-left">
+	<button onclick="" style="margin-top: 1.0rem;"> recalculate </button>
+	<button onclick=""> download stl </button>
 </div>
 
 <canvas id="glcanvas"> </canvas>
