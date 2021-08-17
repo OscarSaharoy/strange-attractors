@@ -23,51 +23,55 @@
 
 		<!-- <h1> strange attractors </h1> -->
 
-		<h2> preset </h2>
+		<label> preset </label>
 		<p> lorenz </p>
 
-		<h2> equations </h2>
-		<div class="three-column">
-			<p> dx/dt </p>  <p> = </p> <p></p>
-			<p> dy/dt </p>  <p> = </p> <p></p>
-			<p> dz/dt </p>  <p> = </p> <p></p>
+		<label> equations (js syntax) </label>
+		<div class="three-column equations">
+			<p> dx/dt </p>  <p class="equals"> = </p> <input type="text"/>
+			<p> dy/dt </p>  <p class="equals"> = </p> <input type="text"/>
+			<p> dz/dt </p>  <p class="equals"> = </p> <input type="text"/>
 		</div>
 
-		<h2> constants </h2>
-		<div class="three-column">
-			<p> a </p>  <p> = </p> <p></p>
-			<p> b </p>  <p> = </p> <p></p>
-			<p> c </p>  <p> = </p> <p></p>
-			<p> d </p>  <p> = </p> <p></p>
-			<p> e </p>  <p> = </p> <p></p>
-			<p> f </p>  <p> = </p> <p></p>
+		<label> constants </label>
+		<div class="three-column constants">
+			<p> a </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> b </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> c </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> d </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> e </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> f </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
 		</div>
 
-		<h2> start position </h2>
-		<p> [ x, y, z ] </p>
+		<label> start position </label>
+		<div class="three-column constants">
+			<p> x </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> y </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> z </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+		</div>
 
-		<h2> points </h2>
-		<input type="text" value="4000"> </input>
+		<label> points </label>
+		<input type="text" value="4000"/>
 
-		<h2> step size (dt) </h2>
-		<input type="text" value="5e-3"> </input>
+		<label> step size (dt) </label>
+		<input type="text" value="5e-3"/>
 
-		<h2> profile width </h2>
-		<input type="text" value="1.0"> </input>
+		<label> profile width </label>
+		<input type="text" value="1.0"/>
 
-		<h2> colour </h2>
-		<input type="text" value="#ffffff"> </input>
+		<label> colour </label>
+		<input type="text" value="#ffffff"/>
 
-		<h2> background </h2>
-		<input type="text" value="#ffffff"> </input>
+		<label> background </label>
+		<input type="text" value="#ffffff"/>
 
-		<h2> shadows </h2>
+		<label> shadows </label>
 		<p> on </p>
 
-		<h2> ambient occlusion </h2>
+		<label> ambient occlusion </label>
 		<p> on </p>
 
-		<h2> supersampling </h2>
+		<label> supersampling </label>
 		<p> off </p>
 
 
@@ -80,7 +84,7 @@
 </div>
 	
 <div id="ui-left">
-	<button onclick="" style="margin-top: 1.0rem;"> recalculate </button>
+	<button onclick=""> recalculate </button>
 	<button onclick=""> download stl </button>
 </div>
 

@@ -22,6 +22,7 @@ let shouldRedraw       = false;
 let dpr                = 1; // vital
 
 let interactiveUIElements = Array.from( document.querySelectorAll( "input, button" ) );
+let uiScrollElement = document.querySelector( "#ui" );
 
 
 function setPointerMeanAndSpread() {
@@ -39,8 +40,8 @@ function pointerdown( event ) {
 
     if( interactiveUIElements.includes( event.target ) ) return;
 
+    // dragging the geometry so prvent default and defocus everything
     event.preventDefault();
-
     document.activeElement.blur();
 
     // add the pointer to pointerPositions and activePointers
@@ -125,6 +126,8 @@ function wheel( event ) {
 
     // prevent browser from doing anything
     // event.preventDefault?.();
+
+    // if( uiScrollElement.contains( event.target ) ) return;
 
     // if( event.target != document.body ) return;
 

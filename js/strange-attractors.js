@@ -10,8 +10,14 @@
 // accumulate graphics over a few frames then start displaying the accumulated image once its better than the single pass rendered one
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
-// todo: fix end caps
+// todo:
+// fix end caps
 // fix number of points calculation
+// mobile layout
+// make ui elements work
+// scrolling the ui only when not covered by geometry, and scrolling it shouldnt cause redraw
+// performance tuning
+// download stl
 // ray tracing??
 
 
@@ -137,7 +143,6 @@ const vertOffsets2 = [
 
 // calculation variables
 const dt         = 5e-3;
-const maxRK4Step = 1;
 const nPoints    = 3500;
 const start      = [ 0.1, -0.1, 8.8 ];
 const points     = new Array(nPoints);
@@ -147,10 +152,10 @@ const points     = new Array(nPoints);
 let sharpEdges = true;
 
 // arrays that will contain the strange attractor geometry data
-let nVerts = (nPoints - 3) * 8 * 23/4 - 9 * !sharpEdges; // todo need to correct this
-let verts  = new Float32Array( (nVerts + 8)*3 );
-let norms  = new Float32Array( (nVerts + 8)*3 );
-let idxs   = new Uint32Array(  (nVerts + 8)*3 );
+let nVerts = (nPoints - 3) * 2 * 24 - 0 * !sharpEdges; // todo need to correct this
+let verts  = new Float32Array( nVerts*3 );
+let norms  = new Float32Array( nVerts*3 );
+let idxs   = new Uint32Array(  nVerts*3 );
 
 
 // define arrays for image effect shaders - 1 quad covering screen
@@ -213,7 +218,7 @@ mat4.lookAt( uSunViewMatrix, uSunPos , [0,0,0], [0,1,0] );
 const renderProgram = makeRenderProgram();
 
 // make the shadow map program and framebuffer
-const uShadowMapSize       = Math.max(canvas.width, canvas.height);
+const uShadowMapSize       = Math.max(canvas.width, canvas.height)*2;
 const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
 const shadowMapProgram     = makeShadowMapProgram();
 

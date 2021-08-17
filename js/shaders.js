@@ -43,6 +43,8 @@ void main() {
 `; const fsSource = ` 
 // ==================================================================================================================
 
+#define SHADOW_SAMPLES 8
+
 precision mediump float;
 
 uniform vec3 uViewPos;
@@ -59,9 +61,9 @@ varying vec4 vNormal;
 varying vec2 vTexPos;
 
 
-float rand() {
+float rand( float i ) {
 
-    return fract( sin(dot(vWorldPos, vec4(19.9898, 75.233, -67.231, 31.2345))) * 43458.5453 );
+    return fract( sin(dot(vWorldPos + i, vec4(19.9898, 75.233, -67.231, 31.2345))) * 43458.5453 );
 }
 
 
@@ -74,12 +76,12 @@ float shadowLight() {
 
     float outval = 0.0;
 
-    for( int i = 0; i < 8; ++i ) {
+    for( int i = 0; i < SHADOW_SAMPLES; ++i ) {
 
-        vec2 offset = uSampleOffsets[i] + (rand()-0.5)*0.4;
+        vec2 offset = uSampleOffsets[i - (i>7?8:0) ] + (rand(float(i))-0.5)*0.4;
 
         float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 4e-7 ).r;
-        outval += ( (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 ) / 8.0;
+        outval += (projectedDepth < currentDepth - 1.5e-2) ? 0.0 : 1.0 / float(SHADOW_SAMPLES);
     }
 
     return outval;
@@ -223,6 +225,8 @@ void main() {
 `; const fAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
+#define AO_SAMPLES 8
+
 precision mediump float;
 
 uniform float uProfileWidth;
@@ -299,7 +303,7 @@ void main() {
     float ambientLight = 0.0;
 
     // loop over 8 nearby samples
-    for( int i = 0; i < 8; ++i ) {
+    for( int i = 0; i < AO_SAMPLES; ++i ) {
 
         // get the view space position of the other sample as the position of the
         // current frag plus an offset scaled by aoRadius and transformed by the TBN matrix
@@ -317,8 +321,8 @@ void main() {
         // add nothing to the ambient light
         float depthDelta   = otherSampleGeometryDepth - otherSampleDepth;
         float depthDropoff = 3.2*uProfileWidth;
-        float passingLight = 0.125 * ( 1.0 + depthDropoff / ( depthDelta - depthDropoff ) );
-        ambientLight      += depthDelta >= 0.0 ? 0.125 : passingLight;
+        float passingLight = 1.0/float(AO_SAMPLES) * ( 1.0 + depthDropoff / ( depthDelta - depthDropoff ) );
+        ambientLight      += depthDelta >= 0.0 ? 1.0/float(AO_SAMPLES) : passingLight;
     }
 
     // for( int i = 0; i < 8; ++i ) {

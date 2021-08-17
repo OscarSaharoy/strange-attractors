@@ -34,7 +34,7 @@ function calcPointRK4( point, dt ) {
     // add the overall rk4 step onto the start position
 
     // if the step is too large, calculate again with a smaller dt
-    if( v3mod(rk4step) > maxRK4Step ) return calcPointRK4( point, dt/2 );
+    if( v3mod(rk4step) > uProfileWidth ) return calcPointRK4( point, dt/2 );
 
     return v3add( r0, rk4step );
 }
