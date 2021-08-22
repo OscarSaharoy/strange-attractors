@@ -1,6 +1,9 @@
 // Oscar Saharoy 2021
 
+
 const v3zero  = [0, 0, 0];
+
+const v3neg   = (vA    ) => vA.map( vi => -vi );
 
 const v3add   = (vA, vB) => [ vA[0] + vB[0] ,
                               vA[1] + vB[1] , 

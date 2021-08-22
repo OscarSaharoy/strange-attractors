@@ -133,10 +133,15 @@ function updateMVPMatrices() {
     let zFar  =  - zMid + ( zMid - viewSpaceBBox.back  ) * 1.1;
 
     // generate the projection matrix
-    mat4.perspective( uProjectionMatrix, 45 * Math.PI / 180, canvas.width/canvas.height, Math.max(zNear, 1), zFar );
+    mat4.perspective( uProjectionMatrix, 45 * Math.PI / 180, canvas.width/canvas.height, Math.max(zNear, 0.1), zFar );
 
     // get the inverse projection matrix
     mat4.invert( uInverseProjectionMatrix, uProjectionMatrix );
+
+
+    // get the furthest left point of the clip space bounding box
+    const clipSpaceBBox = getBBox( mapByMat4( boundingPoints, mat4.mul([], uProjectionMatrix, uModelViewMatrix) ) );
+    furthestLeft = clipSpaceBBox.left;
 
 
     // update the sun projection matrix to fit the geometry to the shadow map

@@ -1,3 +1,5 @@
+/* Oscar Saharoy 2021 */
+
 * {
 	margin:  0;
 	padding: 0;
@@ -7,6 +9,7 @@
 	box-sizing: border-box;
 	--grey: #222;
 	--background: white;
+	--top-whitespace: min( 10vh, 10vw );
 	touch-action: none;
 }
 
@@ -33,13 +36,15 @@ body {
 	height: 100vh;
 	grid-row: 1;
 	grid-column: 1;
-	padding: 10rem 0 0 6rem;
+	padding: var(--top-whitespace) 1rem 0 var(--top-whitespace);
+	margin-right: -1rem;
 	display: grid;
 	grid-template-rows: auto 1fr;
+	overflow: visible;
 	overflow-y: auto;
-	overflow-x: visible;
 	color: var(--grey);
 	justify-content: left;
+	width: min-content;
 }
 
 /* remove scrollbar code
@@ -54,25 +59,38 @@ body {
 }*/
 
 #title-container {
-	padding-top: 5.8rem;
+	direction: ltr;
 	padding-bottom: 1rem;
-	margin-left: 6.8rem;
 	grid-row: 1;
 	grid-column: 1;
 	background: var(--background);
 	justify-self: start;
 	align-self: start;
 	z-index: 1;
+	pointer-events: none;
+	position: sticky;
+	top: calc( -1 * var(--top-whitespace) );
+	margin-top: calc( -1 * var(--top-whitespace) );
+	padding-top: var(--top-whitespace);
+	padding-left: 1rem;
+	margin-left: -1rem;
+	white-space: nowrap;
+	display: grid;
+	grid-gap: 0.8rem;
+	grid-template-columns: 12rem auto;
 }
 
 h1 {
 	font-size: 4rem;
+	grid-column: 1/3;
 }
 
 #ui-top {
 	display: grid;
     direction:ltr;
-    overflow-x: visible;
+    overflow: visible;
+    /*background: red;*/
+	align-content: start;
 }
 
 h2, label {
@@ -86,58 +104,104 @@ p {
 }
 
 input {
+	box-sizing: border-box;
 	background: transparent;
 	font-family: inherit;
 	font-size: 1.2rem;
+	width: 15rem;
+	height: 2.42rem;
 	border: 0.2rem solid transparent;
 	border-bottom: 0.1rem solid black;
-	width: 15rem;
-	padding: 0.4rem 0.4rem 0.5rem 0.4rem;
+	padding: 0.5rem;
+	padding-bottom: 0.6rem;
 	margin-left: -0.2rem;
-	height: 2.42rem;
 }
 
 input:hover {
-	padding: 0.4rem;
+	padding: 0.5rem;
 	border: 0.2rem solid var(--grey);
 	border-radius: 0.32rem;
 }
 
 input:focus {
-	padding: 0.4rem;
+	padding: 0.5rem;
 	border: 0.2rem solid var(--grey);
 	border-radius: 0.32rem;
 	box-shadow: 0 0 0px 4px #00000090;
 	outline: none;
 }
 
+input.error {
+	padding: 0.5rem;
+	border-radius: 0.32rem;
+	border: 0.2rem solid red;
+}
+
+#const-input-holder {
+	margin-top: -0.2rem;
+}
+
+.const-input {
+	margin-top: 0.72rem;
+	display: grid;
+	grid-template-columns: auto auto 1fr;
+	grid-column-gap: 0.4rem;
+	grid-row-gap: 0.8rem;
+}
+
+.const-input p {
+	margin-left: 0.5rem;
+}
+
+.const-input .equals {
+	margin-top: -0.08rem;
+	margin-left: 0;
+}
+
+.const-input input {
+	margin-left: -2.9rem;
+	margin-top: -0.57rem;
+	padding-left: 2.7rem;
+}
+
 .three-column {
 	display: grid;
 	grid-template-columns: auto auto 1fr;
-	grid-gap: 0.25rem;
+	grid-column-gap: 0.4rem;
 	grid-row-gap: 0.8rem;
 	margin-top: 0.5rem;
 }
 
 .three-column p {
-	margin-left: 0.32rem;
+	margin-left: 0.5rem;
 }
 
 .three-column .equals {
 	margin-top: -0.08rem;
+	margin-left: 0;
 }
 
 .three-column.equations input {
-	margin-left: -5.2rem;
 	margin-top: -0.57rem;
-	padding-left: 5.25rem;
-	width: 24rem;
+	margin-left: -5.2rem;
+	padding-left: 5rem;
+	width: 25rem;
 }
 
 .three-column.constants input {
 	margin-left: -2.9rem;
 	margin-top: -0.57rem;
-	padding-left: 3rem;
+	padding-left: 2.7rem;
+}
+
+input[type="color"] {
+	/*border-bottom: 0.2rem solid transparent;*/
+	/*padding: 0;*/
+	margin-top: -0.25rem;
+}
+
+@supports (-moz-appearance:none) {
+    input[type="color"] { height: 1.9rem; }
 }
 
 #ui-bottom {
@@ -180,6 +244,7 @@ button {
 	font-size: 1.2rem;
 	border: 0.2rem solid var(--grey);
 	grid-column: 1;
+	pointer-events: auto;
 }
 
 button:hover {
@@ -195,3 +260,110 @@ button:focus {
 	box-shadow: 0 0 0px 4px #00000090;
 	outline: none;
 }
+
+/*#preset-dropdown {
+	background: transparent;
+	font-family: inherit;
+	font-size: 1.2rem;
+	border: 0.2rem solid transparent;
+	border-bottom: 0.1rem solid black;
+	width: 15rem;
+	padding: 0.4rem;
+	margin-left: -0.2rem;
+	height: 2.42rem;
+	box-sizing: border-box;
+	text-align: left;
+	color: black;
+}
+
+#preset-dropdown:hover {
+	padding: 0.4rem;
+	border: 0.2rem solid var(--grey);
+	border-radius: 0.32rem;
+}
+
+#preset-dropdown:active {
+	box-shadow: none !important;
+}
+
+#preset-dropdown:focus {
+	padding: 0.4rem;
+	border: 0.2rem solid var(--grey);
+	border-radius: 0.32rem;
+	box-shadow: 0 0 0px 4px #00000090;
+	outline: none;
+}*/
+
+#dropdown-outer {
+	position: relative;
+	height: 2.42rem;
+}
+
+#dropdown-inner {
+	position: absolute;
+	width: min-content;
+	background: white;
+	z-index: 0;
+	display: grid;
+	border: 0.2rem solid transparent;
+	border-bottom: 0.1rem solid black;
+}
+
+#dropdown-inner:hover {
+	border: 0.2rem solid var(--grey);
+	border-radius: 0.32rem;
+}
+
+#dropdown-inner:focus-within {
+	/*height: min-content;*/
+	border: 0.2rem solid var(--grey);
+	border-radius: 0.32rem;
+	box-shadow: 0 0 0px 4px #00000090;
+}
+
+#dropdown-inner button {
+	width: 15rem;
+	text-align: left;
+	background: transparent;
+	color: black;
+	border: none;
+	border-radius: 0;
+	height: 0;
+	padding: 0;
+	margin: 0;
+	pointer-events: none;
+	color: transparent;
+}
+
+#dropdown-inner button.display {
+	padding: 0.5rem 0.5rem 0.6rem 0.5rem;
+	height: inherit;
+	color: inherit;
+	pointer-events: inherit;
+}
+
+#dropdown-inner:hover button.display {
+	padding-bottom: 0.5rem;
+}
+
+#dropdown-inner:focus-within button.display {
+	height: 0;
+	color: transparent;
+	padding: 0;
+}
+
+#dropdown-inner button:focus, #dropdown-inner button:active {
+	box-shadow: none !important;
+}
+
+#dropdown-inner:focus-within button:focus, #dropdown-inner:focus-within button.selected {
+	padding-left: 1rem;
+}
+
+#dropdown-inner:focus-within button {
+	padding: 0.5rem;
+	height: inherit;
+	color: inherit;
+	pointer-events: inherit;	
+}
+

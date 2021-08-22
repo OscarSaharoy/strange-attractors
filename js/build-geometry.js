@@ -100,13 +100,28 @@ function formNormals( currentVerts, profileEdges, vertOffsets, tangent, sharpEdg
     const normals = [];
 
     for( let i = 0; i < profileEdges; ++i ) {
+
+        let newNormals;
+
+        if( sharpEdges ) {
         
-        const ip = (i+1) % profileEdges;
+            const ip = (i+1) % profileEdges;
 
-        const toNextVert = v3sub( currentVerts[ip], currentVerts[i] );
-        const normal     = v3norm( v3cross( toNextVert, tangent ) );
+            const toNextVert = v3sub( currentVerts[ip], currentVerts[i] );
+            const normal     = v3norm( v3cross( toNextVert, tangent ) );
 
-        const newNormals = [ normal, sharpEdges ? normal : [] ];
+            newNormals = [ normal, normal ];
+        }
+        else {
+
+            const ip = (i+1) % profileEdges;
+            const iq = (i-1) + i==0?profileEdges:0;
+
+            const toNextVert = v3sub( currentVerts[ip], currentVerts[iq] );
+            const normal     = v3norm( v3cross( toNextVert, tangent ) );
+
+            newNormals = [ normal ];
+        }
 
         normals.push( ...newNormals.flat() );
     }
@@ -139,6 +154,29 @@ function insertIntoArray( source, target, start ) {
 }
 
 
+function formEndCapVerts( currentPoint, vertOffsets, normal, curve ) {
+
+    return [ currentPoint, ...calcVerts(currentPoint, vertOffsets, normal, curve) ].flat();
+}
+
+
+function formEndCapNormals( tangent, profileEdges, reverseNormal=false ) {
+
+    return Array(profileEdges + 1)
+          .fill( reverseNormal ? tangent : v3neg(tangent) )
+          .flat();
+}
+
+
+function formEndCapIndices( preVerts, profileEdges, reverseNormal=false ) {
+
+    return [...Array(profileEdges).keys()]
+              .map( v => reverseNormal ? [ 0, v+1, (v+1) % profileEdges + 1 ] : [ v+1, 0, (v+1) % profileEdges + 1 ] )
+              .flat()
+              .map( v => v + preVerts );
+}
+
+
 function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=true ) {
 
     // todo: add end caps & prevent vertex loops intersecting when curvature of path is large
@@ -148,19 +186,41 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
     // first calculate vertices and normal and curve vectors at the second point of points
 
-    const [ prevPoint, currentPoint, nextPoint ] = points.slice(0, 3);
+    let [ prevPoint, currentPoint, nextPoint ] = points.slice(0, 3);
 
-    const [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
+    let [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
+
+
+    // calculate and insert the start cap
+
+    const startCapVerts   = formEndCapVerts( currentPoint, vertOffsets, normal, curve );
+    insertIntoArray( startCapVerts  , verts, 0 );
+
+    const startCapNormals = formEndCapNormals( tangent, profileEdges );
+    insertIntoArray( startCapNormals, norms, 0 );
+
+    const startCapIdxs    = formEndCapIndices( 0, profileEdges );
+    insertIntoArray( startCapIdxs   , idxs , 0 );
+
+
+    // calculate array offsets to place next verts & indices in the right place
+
+    const startCapVertCount = profileEdges + 1;
+
+    const startCapVertBase  = startCapVertCount*3;
+    const startCapPreVerts  = startCapVertCount;
+    const startCapIdxBase   = startCapVertCount*3;
+
 
     // calculate first set of vertex positions and insert them
 
     const newVerts   = calcVerts( currentPoint, vertOffsets, normal, curve );
 
     const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
-    insertIntoArray( newEdges  , verts, 0 );
+    insertIntoArray( newEdges  , verts, startCapVertBase );
 
     const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges );
-    insertIntoArray( newNormals, norms, 0 );
+    insertIntoArray( newNormals, norms, startCapVertBase );
 
 
     // loop over all the subsequent points except the last
@@ -169,11 +229,11 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
         // get the previous, current and next points
     
-        const [ prevPoint, currentPoint, nextPoint ] = points.slice(idx-1, idx+2);
+        [ prevPoint, currentPoint, nextPoint ] = points.slice(idx-1, idx+2);
 
         // calculate local coordinate basis from curve
 
-        const [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
+        [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
 
         // calculate vertex positions at current point
 
@@ -184,9 +244,9 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
         // each face takes 6 indices
         // profileEdges*6
 
-        const vertBase = 6 * profileEdges * (idx-1) / (2 - sharpEdges);
-        const preVerts = 2 * profileEdges * (idx-2) / (2 - sharpEdges);
-        const idxBase  = 6 * profileEdges * (idx-2);
+        const vertBase   = startCapVertBase + 6 * profileEdges * (idx-1) / (2 - sharpEdges);
+        const preVerts   = startCapPreVerts + 2 * profileEdges * (idx-2) / (2 - sharpEdges);
+        const idxBase    = startCapIdxBase  + 6 * profileEdges * (idx-2);
 
         const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
         insertIntoArray( newEdges, verts, vertBase );
@@ -197,6 +257,24 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
         const newIdxs    = formIndices( preVerts, profileEdges, sharpEdges=sharpEdges );
         insertIntoArray( newIdxs, idxs, idxBase );
     }
+
+
+    // calcluate vertBase and idxBase for end cap
+
+    const endCapVertBase = startCapVertBase + 6 * profileEdges * (points.length-2) / (2 - sharpEdges);
+    const endCapPreVerts = startCapPreVerts + 2 * profileEdges * (points.length-2) / (2 - sharpEdges);
+    const endCapIdxBase  = startCapIdxBase  + 6 * profileEdges * (points.length-3);
+
+    // calculate and add in the end cap
+
+    const endCapVerts    = formEndCapVerts( currentPoint, vertOffsets, normal, curve );
+    insertIntoArray( endCapVerts  , verts, endCapVertBase );
+
+    const endCapNormals  = formEndCapNormals( tangent, profileEdges, reverseNormal=true );
+    insertIntoArray( endCapNormals, norms, endCapVertBase );
+
+    const endCapIdxs     = formEndCapIndices( endCapPreVerts, profileEdges, reverseNormal=true );
+    insertIntoArray( endCapIdxs   , idxs , endCapIdxBase );
 }
 
 

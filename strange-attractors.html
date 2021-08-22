@@ -12,68 +12,79 @@
 
 <body>
 
-
-<div id="title-container">
-	<h1> strange attractors </h1>
-</div>
-
 <div id="ui">
+
+	<div id="title-container">
+		<h1> strange attractors </h1>
+		<button id="recalculate" type='button' onclick=""> recalculate </button>
+		<button id="download-stl" type='button' onclick="" style="grid-column: 2;"> download stl </button>
+	</div>
 	
 	<form id="ui-top" spellcheck="false">
 
-		<!-- <h1> strange attractors </h1> -->
-
 		<label> preset </label>
-		<p> lorenz </p>
+		<div id="dropdown-outer">
+			<div id="dropdown-inner">
+				<button type="button" class="display">lorenz</button>
+				<button type="button" class="option selected">lorenz</button>
+				<button type="button" class="option">chua</button>
+				<button type="button" class="option">lu chen</button>
+				<button type="button" class="option">rossler</button>
+				<button type="button" class="option">aizawa</button>
+				<button type="button" class="option">custom</button>
+			</div>
+		</div>
 
 		<label> equations (js syntax) </label>
 		<div class="three-column equations">
-			<p> dx/dt </p>  <p class="equals"> = </p> <input type="text"/>
-			<p> dy/dt </p>  <p class="equals"> = </p> <input type="text"/>
-			<p> dz/dt </p>  <p class="equals"> = </p> <input type="text"/>
+			<p> dx/dt </p>  <p class="equals"> = </p> <input type="text" id="equation-x-input"/>
+			<p> dy/dt </p>  <p class="equals"> = </p> <input type="text" id="equation-y-input"/>
+			<p> dz/dt </p>  <p class="equals"> = </p> <input type="text" id="equation-z-input"/>
 		</div>
 
 		<label> constants </label>
-		<div class="three-column constants">
-			<p> a </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> b </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> c </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> d </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> e </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> f </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+		<div id="const-input-holder">
+			<div class="const-input" id="#const-input-template">
+				<p class="const-input-label"> a </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+			</div>
 		</div>
+
+		<!-- <div class="three-column constants">
+			<p> a </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+			<p> b </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+			<p> c </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+			<p> d </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+			<p> e </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+			<p> f </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
+		</div> -->
 
 		<label> start position </label>
 		<div class="three-column constants">
-			<p> x </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> y </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
-			<p> z </p>  <p class="equals"> = </p> <input type="number" step="0.1" />
+			<p> x </p>  <p class="equals"> = </p> <input type="number" step="0.1" id="start-x-input"/>
+			<p> y </p>  <p class="equals"> = </p> <input type="number" step="0.1" id="start-y-input"/>
+			<p> z </p>  <p class="equals"> = </p> <input type="number" step="0.1" id="start-z-input"/>
 		</div>
 
 		<label> points </label>
-		<input type="text" value="4000"/>
+		<input type="number" step="1" id="nPoints-input"/>
 
 		<label> step size (dt) </label>
-		<input type="text" value="5e-3"/>
+		<input type="number" step="1e-4" id="step-size-input"/>
 
 		<label> profile width </label>
-		<input type="text" value="1.0"/>
+		<input type="number" step="0.05" id="profile-width-input"/>
 
 		<label> colour </label>
-		<input type="text" value="#ffffff"/>
+		<input type="color" value="#ffffff"/>
 
 		<label> background </label>
-		<input type="text" value="#ffffff"/>
+		<input type="color" value="#ffffff"/>
 
 		<label> shadows </label>
-		<p> on </p>
+		<input type="number" step="0.05" value="1.0"/>
 
 		<label> ambient occlusion </label>
-		<p> on </p>
-
-		<label> supersampling </label>
-		<p> off </p>
-
+		<input type="number" step="0.05" value="1.0"/>
 
 	</form>
 	
@@ -81,11 +92,6 @@
 		<a id="github-link" href="https://github.com/OscarSaharoy"> @OscarSaharoy on github </a>
 	</div>
 
-</div>
-	
-<div id="ui-left">
-	<button onclick=""> recalculate </button>
-	<button onclick=""> download stl </button>
 </div>
 
 <canvas id="glcanvas"> </canvas>
@@ -95,11 +101,13 @@
 <script type="text/javascript" src="js/v3ops.js"             > </script>
 <script type="text/javascript" src="js/webgl.js"             > </script>
 <script type="text/javascript" src="js/shaders.js"           > </script>
+<script type="text/javascript" src="js/dropdown.js"          > </script>
 <script type="text/javascript" src="js/build-geometry.js"    > </script>
 <script type="text/javascript" src="js/attractor-formulas.js"> </script>
 <script type="text/javascript" src="js/canvas-control.js"    > </script>
 <script type="text/javascript" src="js/shader-programs.js"   > </script>
 <script type="text/javascript" src="js/strange-attractors.js"> </script>
+<script type="text/javascript" src="js/ui-interactions.js"   > </script>
 
 
 </body>

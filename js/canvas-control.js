@@ -20,6 +20,7 @@ let lastEndToEndVector = v3zero;
 let skip1Frame         = false;
 let shouldRedraw       = false;
 let dpr                = 1; // vital
+let furthestLeft       = Infinity;
 
 let interactiveUIElements = Array.from( document.querySelectorAll( "input, button" ) );
 let uiScrollElement = document.querySelector( "#ui" );
@@ -127,7 +128,11 @@ function wheel( event ) {
     // prevent browser from doing anything
     // event.preventDefault?.();
 
-    // if( uiScrollElement.contains( event.target ) ) return;
+    if( uiScrollElement.contains( event.target ) ) {
+
+        if( furthestLeft < -0.5 ) event.preventDefault();
+        else return;
+    }
 
     // if( event.target != document.body ) return;
 
@@ -146,4 +151,4 @@ document.body.addEventListener( "pointerdown",  pointerdown );
 document.body.addEventListener( "pointerup",    pointerup   );
 document.body.addEventListener( "pointerleave", pointerup   );
 document.body.addEventListener( "pointermove",  pointermove );
-document.body.addEventListener( "wheel",        wheel       );
+document.body.addEventListener( "wheel",        wheel      , {passive: false} );

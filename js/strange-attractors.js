@@ -11,13 +11,13 @@
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
 // todo:
-// fix end caps
-// fix number of points calculation
-// mobile layout
-// make ui elements work
 // scrolling the ui only when not covered by geometry, and scrolling it shouldnt cause redraw
+// make ui elements work
+// mobile layout
+// animate geometry generation
 // performance tuning
 // download stl
+// progressive rendering
 // ray tracing??
 
 
@@ -52,7 +52,7 @@ function drawLoop( gl ) {
 function updateGeometry() {
 
     // set the start point for the attractor path
-    points[0] = start;
+    points[0] = [...start];
 
     // construct the points
     for( let i = 1; i < nPoints; ++i ) points[i] = calcPointRK4( points[i-1], dt );
@@ -67,7 +67,7 @@ function updateGeometry() {
     boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, vertOffsets2, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, profile, sharpEdges=sharpEdges );
 
     if( debugGeom = false ) {
 
@@ -104,55 +104,60 @@ function updateGeometry() {
 
 
 // vertOffsets defines the cross section of the geometry 
-const width = 1;
-const vertOffsets = [ 
-                      { normal:  width, curve:  0     } ,
-                      { normal:  0    , curve:  width } ,
-                      { normal: -width, curve:  0     } ,
-                      { normal:  0    , curve: -width } 
-                    ];
+let width = 1;
+let vertOffsets = [ 
+                    { normal:  width, curve:  0     } ,
+                    { normal:  0    , curve:  width } ,
+                    { normal: -width, curve:  0     } ,
+                    { normal:  0    , curve: -width } 
+                  ];
 
-const vertOffsets1 = ( n => new Array(n).fill(null).map( (val,i) => 6.28*i/n ).map( x => ({normal: width*Math.cos(x), curve: width*Math.sin(x)}) ) )(10);
+let vertOffsets1 = ( n => new Array(n)
+                             .fill(null)
+                             .map( (val,i) => 6.28*i/n )
+                             .map( x => ({normal: width*Math.cos(x), curve: width*Math.sin(x)}) ) 
+                  )(10);
 
-const vertOffsets2 = [ 
-                      { normal: -0.619*width, curve:  0.904*width } ,
-                      { normal: -0.588*width, curve:  0.809*width } ,
-                      { normal: -0.951*width, curve:  0.309*width } ,
-                      { normal: -1.051*width, curve:  0.309*width } ,
+let vertOffsets2 = [ 
+                    { normal: -0.619*width, curve:  0.904*width } ,
+                    { normal: -0.588*width, curve:  0.809*width } ,
+                    { normal: -0.951*width, curve:  0.309*width } ,
+                    { normal: -1.051*width, curve:  0.309*width } ,
 
-                      { normal: -1.051*width, curve: -0.309*width } ,
-                      { normal: -0.951*width, curve: -0.309*width } ,
-                      { normal: -0.588*width, curve: -0.809*width } ,
-                      { normal: -0.619*width, curve: -0.904*width } ,
+                    { normal: -1.051*width, curve: -0.309*width } ,
+                    { normal: -0.951*width, curve: -0.309*width } ,
+                    { normal: -0.588*width, curve: -0.809*width } ,
+                    { normal: -0.619*width, curve: -0.904*width } ,
 
-                      { normal: -0.031*width, curve: -1.095*width } ,
-                      { normal:  0.000*width, curve: -1.000*width } ,
-                      { normal:  0.588*width, curve: -0.809*width } ,
-                      { normal:  0.669*width, curve: -0.868*width } ,
-                      { normal:  1.032*width, curve: -0.368*width } , 
-                      { normal:  0.951*width, curve: -0.309*width } , 
+                    { normal: -0.031*width, curve: -1.095*width } ,
+                    { normal:  0.000*width, curve: -1.000*width } ,
+                    { normal:  0.588*width, curve: -0.809*width } ,
+                    { normal:  0.669*width, curve: -0.868*width } ,
+                    { normal:  1.032*width, curve: -0.368*width } , 
+                    { normal:  0.951*width, curve: -0.309*width } , 
 
-                      { normal:  0.951*width, curve:  0.309*width } , 
-                      { normal:  1.032*width, curve:  0.368*width } , 
-                      { normal:  0.669*width, curve:  0.868*width } ,
-                      { normal:  0.588*width, curve:  0.809*width } ,
-                      { normal:  0.000*width, curve:  1.000*width } ,
-                      { normal: -0.031*width, curve:  1.095*width } ,
-                    ];
+                    { normal:  0.951*width, curve:  0.309*width } , 
+                    { normal:  1.032*width, curve:  0.368*width } , 
+                    { normal:  0.669*width, curve:  0.868*width } ,
+                    { normal:  0.588*width, curve:  0.809*width } ,
+                    { normal:  0.000*width, curve:  1.000*width } ,
+                    { normal: -0.031*width, curve:  1.095*width } ,
+                   ];
 
 
 // calculation variables
-const dt         = 5e-3;
-const nPoints    = 3500;
-const start      = [ 0.1, -0.1, 8.8 ];
-const points     = new Array(nPoints);
+let dt      = 5e-3;
+let nPoints = 3500;
+let points  = new Array(nPoints);
+let start   = [ 0.1, -0.1, 8.8 ];
 
 
 // controls whether the mesh is rendered with sharp edges
 let sharpEdges = true;
+let profile = vertOffsets2;
 
 // arrays that will contain the strange attractor geometry data
-let nVerts = (nPoints - 3) * 2 * 24 - 0 * !sharpEdges; // todo need to correct this
+let nVerts = nPoints * 2 * profile.length + 1;
 let verts  = new Float32Array( nVerts*3 );
 let norms  = new Float32Array( nVerts*3 );
 let idxs   = new Uint32Array(  nVerts*3 );
@@ -218,7 +223,7 @@ mat4.lookAt( uSunViewMatrix, uSunPos , [0,0,0], [0,1,0] );
 const renderProgram = makeRenderProgram();
 
 // make the shadow map program and framebuffer
-const uShadowMapSize       = Math.max(canvas.width, canvas.height)*2;
+const uShadowMapSize       = Math.max(canvas.width, canvas.height)*1.6;
 const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
 const shadowMapProgram     = makeShadowMapProgram();
 

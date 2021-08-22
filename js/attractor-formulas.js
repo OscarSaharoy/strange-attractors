@@ -1,3 +1,4 @@
+// Oscar Saharoy 2021
 
 // lorenz
 
@@ -36,7 +37,7 @@ const fr_lu_chen = ([x,y,z]) => [ a_lu_chen * ( y - x )             ,
 
 // rossler
 
-let a_rossler = 0.1, 
+let a_rossler = 0.1,        
     b_rossler = 0.1,
     c_rossler = 17;
 
@@ -46,15 +47,15 @@ const fr_rossler = ([x,y,z]) => [ - y - z                       ,
 
 // aizawa
 
-let a_aizawa = 0.9, 
-    b_aizawa = 0.7,
-    c_aizawa = 0.6,
-    d_aizawa = 3.5,
+let d = 0.9, 
+    a = 0.7,
+    c = 0.6,
+    b = 3.5,
 	e_aizawa = 0.25,
 	f_aizawa = 0.1;
 
-const fr_aizawa = ([x,y,z]) => [ (z-b_aizawa) * x - d_aizawa*y ,
-                                 d_aizawa*x + (z-b_aizawa) * y ,
-                                 c_aizawa + a_aizawa*z - z**3/3 - (x**2 + y**2) * (1 + e_aizawa*z) + f_aizawa*z*x**3 ];
+const fr_aizawa = ([x,y,z]) => [ (z-a) * x - b*y ,
+                                 b*x + (z-a) * y ,
+                                 c + d*z - z**3/3 - (x**2 + y**2) * (1 + e_aizawa*z) + f_aizawa*z*x**3 ];
 
-const fr = fr_lorenz;
+let fr = fr_lorenz;
