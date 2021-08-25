@@ -117,6 +117,9 @@ function renderScene() {
 
 function updateMVPMatrices() {
 
+    // increment the frame uniform
+    uFrame = ( uFrame + 1 ) % 100;
+
     // update the modelView matrix
     mat4.mul( uModelViewMatrix, uViewMatrix, uModelMatrix );
 
@@ -154,8 +157,8 @@ function updateMVPMatrices() {
 
     // calcuLate the required field of view and aspect
     const viewDist      = v3mod( v3sub(uSunPos, pointsCentre) );
-    const verticalFOV   = Math.atan( Math.abs(sunViewSpaceBBox.top - sunViewSpaceBBox.bottom) / 2 / viewDist ) * 2.2
-    const horizontalFOV = Math.atan( Math.abs(sunViewSpaceBBox.right - sunViewSpaceBBox.left) / 2 / viewDist ) * 2.2
+    const verticalFOV   = Math.atan( Math.abs(sunViewSpaceBBox.top - sunViewSpaceBBox.bottom) / 2 / viewDist ) * 2.2;// + (Math.random()-0.5)/300;
+    const horizontalFOV = Math.atan( Math.abs(sunViewSpaceBBox.right - sunViewSpaceBBox.left) / 2 / viewDist ) * 2.2;// + (Math.random()-0.5)/300;
     const aspect        = horizontalFOV / verticalFOV;
 
     // set the near and far clipping planes
@@ -231,6 +234,8 @@ function updateRenderProgramUniforms() {
 
     // bind the shadow map sampler to texture unit 1
     gl.uniform1i( renderProgram.uShadowMap, 1 );
+
+    gl.uniform1i( renderProgram.uFrame, uFrame );
 
     gl.uniform1i( renderProgram.uOcclusionMap, 5 );
 }
@@ -332,6 +337,7 @@ function makeRenderProgram() {
     renderProgram.uOcclusionMap     = gl.getUniformLocation( renderProgram.program, 'uOcclusionMap'     );
     renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram.program, 'uShadowMapSize'    );
     renderProgram.uSampleOffsets    = gl.getUniformLocation( renderProgram.program, 'uSampleOffsets'    );
+    renderProgram.uFrame            = gl.getUniformLocation( renderProgram.program, 'uFrame'            );
 
     renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram.program, 'aVertexPosition'   );
     renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram.program, 'aVertexNormal'     );

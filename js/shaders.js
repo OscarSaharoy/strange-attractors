@@ -52,6 +52,7 @@ uniform sampler2D uShadowMap;
 uniform sampler2D uOcclusionMap;
 uniform float uShadowMapSize;
 uniform vec2 uSampleOffsets[8];
+uniform int uFrame;
 
 varying vec4 vWorldPos;
 varying vec4 vProjectedTexcoord;

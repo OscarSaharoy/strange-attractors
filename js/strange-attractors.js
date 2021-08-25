@@ -12,12 +12,15 @@
 
 // todo:
 // scrolling the ui only when not covered by geometry, and scrolling it shouldnt cause redraw
-// make ui elements work
+// sort out local axis alignment
 // mobile layout
+// use webgl2/dont require float textures
+// make ui elements work on safari
 // animate geometry generation
 // performance tuning
 // download stl
 // progressive rendering
+// sliders (not that important)
 // ray tracing??
 
 
@@ -104,48 +107,49 @@ function updateGeometry() {
 
 
 // vertOffsets defines the cross section of the geometry 
-let width = 1;
+let uProfileWidth = 1;
 let vertOffsets = [ 
-                    { normal:  width, curve:  0     } ,
-                    { normal:  0    , curve:  width } ,
-                    { normal: -width, curve:  0     } ,
-                    { normal:  0    , curve: -width } 
+                    { normal:  uProfileWidth, curve:  0             } ,
+                    { normal:  0            , curve:  uProfileWidth } ,
+                    { normal: -uProfileWidth, curve:  0             } ,
+                    { normal:  0            , curve: -uProfileWidth } 
                   ];
 
 let vertOffsets1 = ( n => new Array(n)
                              .fill(null)
                              .map( (val,i) => 6.28*i/n )
-                             .map( x => ({normal: width*Math.cos(x), curve: width*Math.sin(x)}) ) 
+                             .map( x => ({normal: uProfileWidth*Math.cos(x), curve: uProfileWidth*Math.sin(x)}) ) 
                   )(10);
 
 let vertOffsets2 = [ 
-                    { normal: -0.619*width, curve:  0.904*width } ,
-                    { normal: -0.588*width, curve:  0.809*width } ,
-                    { normal: -0.951*width, curve:  0.309*width } ,
-                    { normal: -1.051*width, curve:  0.309*width } ,
+                    { normal: -0.619*uProfileWidth, curve:  0.904*uProfileWidth } ,
+                    { normal: -0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
+                    { normal: -0.951*uProfileWidth, curve:  0.309*uProfileWidth } ,
+                    { normal: -1.051*uProfileWidth, curve:  0.309*uProfileWidth } ,
 
-                    { normal: -1.051*width, curve: -0.309*width } ,
-                    { normal: -0.951*width, curve: -0.309*width } ,
-                    { normal: -0.588*width, curve: -0.809*width } ,
-                    { normal: -0.619*width, curve: -0.904*width } ,
+                    { normal: -1.051*uProfileWidth, curve: -0.309*uProfileWidth } ,
+                    { normal: -0.951*uProfileWidth, curve: -0.309*uProfileWidth } ,
+                    { normal: -0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
+                    { normal: -0.619*uProfileWidth, curve: -0.904*uProfileWidth } ,
 
-                    { normal: -0.031*width, curve: -1.095*width } ,
-                    { normal:  0.000*width, curve: -1.000*width } ,
-                    { normal:  0.588*width, curve: -0.809*width } ,
-                    { normal:  0.669*width, curve: -0.868*width } ,
-                    { normal:  1.032*width, curve: -0.368*width } , 
-                    { normal:  0.951*width, curve: -0.309*width } , 
+                    { normal: -0.031*uProfileWidth, curve: -1.095*uProfileWidth } ,
+                    { normal:  0.000*uProfileWidth, curve: -1.000*uProfileWidth } ,
+                    { normal:  0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
+                    { normal:  0.669*uProfileWidth, curve: -0.868*uProfileWidth } ,
+                    { normal:  1.032*uProfileWidth, curve: -0.368*uProfileWidth } , 
+                    { normal:  0.951*uProfileWidth, curve: -0.309*uProfileWidth } , 
 
-                    { normal:  0.951*width, curve:  0.309*width } , 
-                    { normal:  1.032*width, curve:  0.368*width } , 
-                    { normal:  0.669*width, curve:  0.868*width } ,
-                    { normal:  0.588*width, curve:  0.809*width } ,
-                    { normal:  0.000*width, curve:  1.000*width } ,
-                    { normal: -0.031*width, curve:  1.095*width } ,
+                    { normal:  0.951*uProfileWidth, curve:  0.309*uProfileWidth } , 
+                    { normal:  1.032*uProfileWidth, curve:  0.368*uProfileWidth } , 
+                    { normal:  0.669*uProfileWidth, curve:  0.868*uProfileWidth } ,
+                    { normal:  0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
+                    { normal:  0.000*uProfileWidth, curve:  1.000*uProfileWidth } ,
+                    { normal: -0.031*uProfileWidth, curve:  1.095*uProfileWidth } ,
                    ];
 
 
 // calculation variables
+let fr      = () => v3zero;
 let dt      = 5e-3;
 let nPoints = 3500;
 let points  = new Array(nPoints);
@@ -199,9 +203,9 @@ const uSunVPMatrix             = mat4.create();
 
 const uInverseProjectionMatrix = mat4.create();
 
-const uProfileWidth = width;
-const uViewPos = [0, 0, 90];
-const uSunPos  = [100, 100, 100];
+let uFrame   = 0;
+let uViewPos = [0, 0, 90];
+let uSunPos  = [100, 100, 100];
 
 let boundingPoints = [];
 
@@ -235,9 +239,6 @@ const depthProgram     = makeDepthProgram();
 const ambientOcclusionFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE4, gl.TEXTURE5 );
 const ambientOcclusionProgram     = makeAmbientOcclusionProgram();
 
-
-// make the geometry
-updateGeometry();
 
 // start the draw loop
 drawLoop( gl );

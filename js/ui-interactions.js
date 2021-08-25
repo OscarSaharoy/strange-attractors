@@ -23,6 +23,12 @@ recalculateButton.onclick = recalculate;
 const downloadSTLButton   = document.querySelector( "#download-stl" );
 downloadSTLButton.onclick = () => {};
 
+[ equationXInput, equationYInput, equationZInput ].forEach( elm => elm.addEventListener("input", updateConstUI) );
+
+
+const getLabel = constInputDiv => constInputDiv.querySelector( "p.const-input-label" );
+const getInput = constInputDiv => constInputDiv.querySelector( "input"               );
+
 
 const lorenzData = { 
 
@@ -128,13 +134,13 @@ const aizawaData = {
 		"f" : 0.1
 	},
 
-	startX :  0.1,
-	startY : -0.1,
-	startZ :  0.8,
+	startX :  0.05,
+	startY : -0.15,
+	startZ :  2.8,
 
 	nPoints      : 3500,
 	stepSize     : 5e-3,
-	profileWidth : 1.0
+	profileWidth : 0.05
 };
 
 
@@ -152,7 +158,7 @@ function detectConstNames() {
 	const equationString = `${equationXInput.value} ${equationYInput.value} ${equationZInput.value}`;
 
 	// regex that finds all single characters like a, b, t, but not xyz
-	const charDetector = /\b[^xyz\W\d]\b/g;
+	const charDetector = /\b[^xyz_\W\d]\b/g;
 
 	// get the matches of the regex 
 	const matches = equationString.match(charDetector);
@@ -162,26 +168,36 @@ function detectConstNames() {
 }
 
 
+function addConstInput( constName ) {
+
+	// clone the template const input and add it in
+	let newConstInput = constInputTemplate.cloneNode([true]);
+	constInputHolder.appendChild( newConstInput );
+
+	// add the new input to the interactive UI element list and set the label to the const letter
+	interactiveUIElements.push( getInput( newConstInput ) );
+	getLabel( newConstInput ).innerHTML = constName;	
+	getInput( newConstInput ).value     = 0;	
+}
+
+
 function updateConstUI() {
 
-	// remove all the existing const inputs
-	const constInputs = Array.from( constInputHolder.querySelectorAll(".const-input") );
-	constInputs.forEach( elm => elm.remove() );
+	// get all the existing const names
+	const existingConstInputs = Array.from( constInputHolder.querySelectorAll(".const-input") );
+	const existingConstNames  = existingConstInputs.map( constInput => getLabel( constInput ).innerHTML );
 
-	// get the names of constants in use
+	// get the names of constants in the equations
 	const constNames = detectConstNames();
 
-	// loop over the consts we found
-	for( const constName of constNames ) {
+	// find which const names to add and which to remove
+	const constNamesToAdd     = constNames.filter( name => !existingConstNames.includes(name) );
+	const constNamesToRemove  = existingConstNames.filter( name => !constNames.includes(name) );
+	const constInputsToRemove = existingConstInputs.filter( constInput => constNamesToRemove.includes( getLabel(constInput).innerHTML ) );
 
-		// clone the template const input and add it in
-		let newConstInput = constInputTemplate.cloneNode([true]);
-		constInputHolder.appendChild( newConstInput );
-
-		// add the new input to the interactive UI element list and set the label to the const letter
-		interactiveUIElements.push( newConstInput.querySelector( "input" ) );
-		newConstInput.querySelector( "p.const-input-label" ).innerHTML = constName;
-	}
+	// add the const inputs we should add and remove the ones we should remove
+	constNamesToAdd.forEach( addConstInput );
+	constInputsToRemove.forEach( elm => elm.remove() );
 }
 
 
@@ -208,8 +224,8 @@ function applyPreset( data ) {
 	for( const constInputDiv of constInputHolder.querySelectorAll( ".const-input" ) ) {
 
 		// get the const input label and input element
-		const label = constInputDiv.querySelector( ".const-input-label" );
-		const input = constInputDiv.querySelector( "input" );
+		const label = getLabel( constInputDiv );
+		const input = getInput( constInputDiv );
 
 		// set the input according to the value in the data object
 		input.value = data.constValues[label.innerHTML];
@@ -286,42 +302,46 @@ function updateEquations() {
 
 function recalculate() {
 
-	// set all the simulation vars from the inputs - fr already updated on typing
-	start   = [ +startXInput.value, +startYInput.value, +startZInput.value ];
-	dt      = +stepSizeInput.value;
-	width   = +profileWidthInput.value;
-	nPoints = +nPointsInput.value;
+	// set all the simulation vars from the inputs
+	start         = [ +startXInput.value, +startYInput.value, +startZInput.value ];
+	dt            = +stepSizeInput.value;
+	uProfileWidth = +profileWidthInput.value;
+	nPoints       = +nPointsInput.value;
+	
+	points        = new Array(nPoints);
+	nVerts        = nPoints * 2 * profile.length + 1;
+	verts         = new Float32Array( nVerts*3 );
+	norms         = new Float32Array( nVerts*3 );
+	idxs          = new Uint32Array(  nVerts*3 );
 
-	nVerts  = nPoints * 2 * profile.length + 1;
-	verts   = new Float32Array( nVerts*3 );
-	norms   = new Float32Array( nVerts*3 );
-	idxs    = new Uint32Array(  nVerts*3 );
+	profile = [
+               { normal: -0.619*uProfileWidth, curve:  0.904*uProfileWidth } ,
+               { normal: -0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
+               { normal: -0.951*uProfileWidth, curve:  0.309*uProfileWidth } ,
+               { normal: -1.051*uProfileWidth, curve:  0.309*uProfileWidth } ,
 
-	profile      = [ 
-                    { normal: -0.619*width, curve:  0.904*width } ,
-                    { normal: -0.588*width, curve:  0.809*width } ,
-                    { normal: -0.951*width, curve:  0.309*width } ,
-                    { normal: -1.051*width, curve:  0.309*width } ,
+               { normal: -1.051*uProfileWidth, curve: -0.309*uProfileWidth } ,
+               { normal: -0.951*uProfileWidth, curve: -0.309*uProfileWidth } ,
+               { normal: -0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
+               { normal: -0.619*uProfileWidth, curve: -0.904*uProfileWidth } ,
 
-                    { normal: -1.051*width, curve: -0.309*width } ,
-                    { normal: -0.951*width, curve: -0.309*width } ,
-                    { normal: -0.588*width, curve: -0.809*width } ,
-                    { normal: -0.619*width, curve: -0.904*width } ,
+               { normal: -0.031*uProfileWidth, curve: -1.095*uProfileWidth } ,
+               { normal:  0.000*uProfileWidth, curve: -1.000*uProfileWidth } ,
+               { normal:  0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
+               { normal:  0.669*uProfileWidth, curve: -0.868*uProfileWidth } ,
+               { normal:  1.032*uProfileWidth, curve: -0.368*uProfileWidth } , 
+               { normal:  0.951*uProfileWidth, curve: -0.309*uProfileWidth } , 
 
-                    { normal: -0.031*width, curve: -1.095*width } ,
-                    { normal:  0.000*width, curve: -1.000*width } ,
-                    { normal:  0.588*width, curve: -0.809*width } ,
-                    { normal:  0.669*width, curve: -0.868*width } ,
-                    { normal:  1.032*width, curve: -0.368*width } , 
-                    { normal:  0.951*width, curve: -0.309*width } , 
+               { normal:  0.951*uProfileWidth, curve:  0.309*uProfileWidth } , 
+               { normal:  1.032*uProfileWidth, curve:  0.368*uProfileWidth } , 
+               { normal:  0.669*uProfileWidth, curve:  0.868*uProfileWidth } ,
+               { normal:  0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
+               { normal:  0.000*uProfileWidth, curve:  1.000*uProfileWidth } ,
+               { normal: -0.031*uProfileWidth, curve:  1.095*uProfileWidth } ,
+              ];
 
-                    { normal:  0.951*width, curve:  0.309*width } , 
-                    { normal:  1.032*width, curve:  0.368*width } , 
-                    { normal:  0.669*width, curve:  0.868*width } ,
-                    { normal:  0.588*width, curve:  0.809*width } ,
-                    { normal:  0.000*width, curve:  1.000*width } ,
-                    { normal: -0.031*width, curve:  1.095*width } ,
-                   ];
+    // update the attractor equations
+    updateEquations();
 
 	// update the model
 	updateGeometry();
@@ -330,5 +350,6 @@ function recalculate() {
 }
 
 
-
+// apply the lorenz preset and calculate the geometry
 applyPreset( lorenzData );
+recalculate();

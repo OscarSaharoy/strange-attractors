@@ -130,7 +130,7 @@ function wheel( event ) {
 
     if( uiScrollElement.contains( event.target ) ) {
 
-        if( furthestLeft < -0.5 ) event.preventDefault();
+        if( furthestLeft < -0.6 ) event.preventDefault();
         else return;
     }
 

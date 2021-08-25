@@ -663,6 +663,11 @@ function getBoundingPoints( inPoints ) {
     let topCorner    = inPoints.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
     let bottomCorner = inPoints.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
 
+    // add an extra profile width onto the corners to make sure we dont miss any
+    const extraBit   = [ uProfileWidth, uProfileWidth, uProfileWidth ];
+    topCorner        = v3add( topCorner   , extraBit ); 
+    bottomCorner     = v3sub( bottomCorner, extraBit ); 
+
     // return the bounding points
     return [ [    topCorner[0],    topCorner[1],    topCorner[2] ],
              [    topCorner[0],    topCorner[1], bottomCorner[2] ],
