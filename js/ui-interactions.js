@@ -115,15 +115,15 @@ const lorenz2Data = {
 	equationZ : "-z + x * (c*y + z)",
 
 	constValues : { 
-		"a" : 0.9,
-		"b" : 9.9,
-		"c" : 5,
-		"d" : 1
+		"a" : 0.6,
+		"b" : 9.5,
+		"c" : 6.3,
+		"d" : 1.7
 	},
 
-	startX : 6,
-	startY : 1.2,
-	startZ : 0.5,
+	startX : 6.5,
+	startY : 1,
+	startZ : 0.3,
 
 	nPoints      : 3500,
 	stepSize     : 0.05,
@@ -154,13 +154,13 @@ const hadleyData = {
 
 
 // get all the preset data objects
-const presetsData = { "lorenz"       : lorenzData,
-			          "chua"         : chuaData, 
-			          "aizawa"       : aizawaData,
-			          "arneodo"      : arneodoData,
-			          "halvorsen"    : halvorsenData,
-			          "lorenz2"      : lorenz2Data,
-			          "hadley"       : hadleyData };
+const presetsData = { "lorenz"    : lorenzData,
+			          "chua"      : chuaData, 
+			          "aizawa"    : aizawaData,
+			          "arneodo"   : arneodoData,
+			          "halvorsen" : halvorsenData,
+			          "lorenz2"   : lorenz2Data,
+			          "hadley"    : hadleyData };
 
 
 const constInputHolder    = document.querySelector( "#const-input-holder" )

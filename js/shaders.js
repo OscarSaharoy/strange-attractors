@@ -105,7 +105,7 @@ void main() {
 
     specular = clamp( specular, 0.0, 10000.0 );
 
-    float light = ( 0.4*diffuse + 0.4*pow( specular, 6.0 ) + 0.4*ambient) * shadow + 0.01*ambient ;
+    float light = ( 0.4*diffuse + 0.4*pow( specular, 6.0 ) + 0.4*ambient) * shadow + 0.02*ambient ;
 
     gl_FragColor = vec4( material * light, 1.0 );
 
