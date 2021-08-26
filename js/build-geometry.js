@@ -52,8 +52,8 @@ function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
     const prevToCurrent = v3sub( currentPoint, prevPoint );
     const currentToNext = v3sub( nextPoint, currentPoint );
 
-    // const nonNormalisedNormal = v3cross( currentToNext, prevToCurrent );
-    const nonNormalisedNormal = v3cross( [1,0,0], tangent );
+    const nonNormalisedNormal = v3cross( currentToNext, prevToCurrent );
+    // const nonNormalisedNormal = v3cross( [1,0,0], tangent );
     const normal = v3norm( nonNormalisedNormal );
 
     // calculate the vector in the direction of curvature (toward centre of curvature)

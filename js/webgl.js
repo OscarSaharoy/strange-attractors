@@ -1,33 +1,47 @@
 // Oscar Saharoy 2021
 
+let webgl2 = true;
 
 function initgl( canvasID ) {
 
     // get canvas and webgl context
     const canvas = document.getElementById( canvasID );
-    const gl     = canvas.getContext("webgl", {antialias: true});
+
+    // try to get webgl2 context but if not fallback to webgl1
+    let gl = false;//canvas.getContext("webgl2", {antialias: true});
+    
+    if( !gl || false ) {
+
+        gl = canvas.getContext("webgl", {antialias: true});
+        webgl2 = false;
+
+        // try to enable the uint index extension to allow more verts
+        if( !gl.getExtension('OES_element_index_uint') )
+            
+            // if its not supported give an error message
+            return console.log( "WebGL extension OES_element_index_uint not supported :(" );
 
 
-    // try to enable the uint index extension to allow more verts
-    if( !gl.getExtension('OES_element_index_uint') )
-        
-        // if its not supported give an error message
-        return console.log( "WebGL extension OES_element_index_uint not supported :(" );
+        if( !gl.getExtension('WEBGL_depth_texture') )
+
+            return console.log( "WebGL extension WEBGL_depth_texture not supported :(" );
 
 
-    if( !gl.getExtension('WEBGL_depth_texture') )
+        if( !gl.getExtension('OES_texture_float') )
 
-        return console.log( "WebGL extension WEBGL_depth_texture not supported :(" );
-
-
-    if( !gl.getExtension('OES_texture_float') )
-
-        return console.log( "WebGL extension OES_texture_float not supported :(" );
+            return console.log( "WebGL extension OES_texture_float not supported :(" );
 
 
-    if( !gl.getExtension('OES_texture_float_linear') )
+        if( !gl.getExtension('OES_texture_float_linear') )
 
-        return console.log( "WebGL extension OES_texture_float_linear not supported :(" );
+            return console.log( "WebGL extension OES_texture_float_linear not supported :(" );
+    }
+    else {
+
+        if( !gl.getExtension('EXT_color_buffer_float') )
+
+            return console.log( "WebGL2 extension EXT_color_buffer_float not supported :(" );
+    }
 
 
     // set the background to transparent
@@ -160,18 +174,22 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
     // create the depth texture
     const depthTexture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, depthTexture );
+
+
+    // need different internal format depending on webgl version
+    const depthInternalFormat = webgl2 ? gl.DEPTH_COMPONENT16 : gl.DEPTH_COMPONENT;
  
     // setup the texture
     gl.texImage2D(
-        gl.TEXTURE_2D,      // target
-        0,                  // mip level
-        gl.DEPTH_COMPONENT, // internal format
-        width,              // width
-        height,             // height
-        0,                  // border
-        gl.DEPTH_COMPONENT, // format
-        gl.UNSIGNED_INT,    // type
-        null                // data
+        gl.TEXTURE_2D,       // target
+        0,                   // mip level
+        depthInternalFormat, // internal format
+        width,               // width
+        height,              // height
+        0,                   // border
+        gl.DEPTH_COMPONENT,  // format
+        gl.UNSIGNED_INT,     // type
+        null                 // data
     );
 
     // set the filtering so we don't need mips
@@ -200,11 +218,14 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
     const colorTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, colorTexture);
 
+    // need different internal format depending on webgl version
+    const colorInternalFormat = webgl2 ? gl.RGBA32F : gl.RGBA;
+
     // setup that texture
     gl.texImage2D(
         gl.TEXTURE_2D,
         0,
-        gl.RGBA,
+        colorInternalFormat,
         width,
         height,
         0,

@@ -1,5 +1,168 @@
 // Oscar Saharoy 2021
 
+
+
+const lorenzData = { 
+
+	equationX : "a * (y - x)",
+	equationY : "x * (b - z) - y",
+	equationZ : "x * y - c*z",
+
+	constValues : { 
+		"a" : 10,
+		"b" : 28,
+		"c" : 2.666667
+	},
+
+	startX :  0.1,
+	startY : -0.1,
+	startZ :  8.8,
+
+	nPoints      : 3500,
+	stepSize     : 5e-3,
+	profileWidth : 1.0
+};
+
+const chuaData = { 
+
+	equationX : "a * (y - x)",
+	equationY : "(b - a) * x - x*z + b*y",
+	equationZ : "x * y - c*z",
+
+	constValues : { 
+		"a" : 40,
+		"b" : 28,
+		"c" : 3
+	},
+
+	startX :  0.1,
+	startY : -0.1,
+	startZ :  0.8,
+
+	nPoints      : 3500,
+	stepSize     : 5e-3,
+	profileWidth : 1.0
+};
+
+const aizawaData = { 
+
+	equationX : "(z - a) * x - b*y",
+	equationY : "b*x + (z - a) * y",
+	equationZ : "c + d*z - 1/3 * z**3 - (x**2 + y**2) * (1 + e*z) + f * z*x**3",
+
+	constValues : { 
+		"a" : 0.7,
+		"b" : 3.5,
+		"c" : 0.6,
+		"d" : 0.9,
+		"e" : 0.25,
+		"f" : 0.1
+	},
+
+	startX :  0.05,
+	startY : -0.15,
+	startZ :  2.8,
+
+	nPoints      : 3500,
+	stepSize     : 5e-3,
+	profileWidth : 0.05
+};
+
+const arneodoData = { 
+
+	equationX : "y",
+	equationY : "z",
+	equationZ : "-a*x - b*y - z + c*x**3",
+
+	constValues : { 
+		"a" : -5.5,
+		"b" : 3.5,
+		"c" : -1
+	},
+
+	startX : 2,
+	startY : 1,
+	startZ : 0.5,
+
+	nPoints      : 3500,
+	stepSize     : 0.05,
+	profileWidth : 0.28
+};
+
+const halvorsenData = { 
+
+	equationX : "-a*x - 4*y - 4*z - y**2",
+	equationY : "-a*y - 4*z - 4*x - z**2",
+	equationZ : "-a*z - 4*x - 4*y - x**2",
+
+	constValues : { 
+		"a" : 1.4
+	},
+
+	startX : -6,
+	startY : -2,
+	startZ : -1,
+
+	nPoints      : 3500,
+	stepSize     : 0.05,
+	profileWidth : 0.5
+};
+
+const lorenz2Data = { 
+
+	equationX : "-a*x + y**2 - z**2 + a*b",
+	equationY : "x * (y - c*z) + d",
+	equationZ : "-z + x * (c*y + z)",
+
+	constValues : { 
+		"a" : 0.9,
+		"b" : 9.9,
+		"c" : 5,
+		"d" : 1
+	},
+
+	startX : 6,
+	startY : 1.2,
+	startZ : 0.5,
+
+	nPoints      : 3500,
+	stepSize     : 0.05,
+	profileWidth : 0.6
+};
+
+const hadleyData = { 
+
+	equationX : "-1*y**2 - z**2 - a*x + a*b",
+	equationY : "x*y - c*x*z - y + d",
+	equationZ : "c*x*y + x*z - z",
+
+	constValues : { 
+		"a" : 0.2,
+		"b" : 8,
+		"c" : 4,
+		"d" : 1
+	},
+
+	startX : 2,
+	startY : -0.1,
+	startZ : 0.5,
+
+	nPoints      : 3500,
+	stepSize     : 0.05,
+	profileWidth : 0.1
+};
+
+
+// get all the preset data objects
+const presetsData = { "lorenz"       : lorenzData,
+			          "chua"         : chuaData, 
+			          "aizawa"       : aizawaData,
+			          "arneodo"      : arneodoData,
+			          "halvorsen"    : halvorsenData,
+			          "lorenz2"      : lorenz2Data,
+			          "hadley"       : hadleyData };
+
+
 const constInputHolder    = document.querySelector( "#const-input-holder" )
 const constInputTemplate  = document.querySelector( ".const-input" );
 constInputTemplate.remove();
@@ -30,135 +193,14 @@ const getLabel = constInputDiv => constInputDiv.querySelector( "p.const-input-la
 const getInput = constInputDiv => constInputDiv.querySelector( "input"               );
 
 
-const lorenzData = { 
-
-	equationX : "a * (y - x)",
-	equationY : "x * (b - z) - y",
-	equationZ : "x * y - c*z",
-
-	constValues : { 
-		"a" : 10,
-		"b" : 28,
-		"c" : 2.666667
-	},
-
-	startX :  0.1,
-	startY : -0.1,
-	startZ :  8.8,
-
-	nPoints      : 3500,
-	stepSize     : 5e-3,
-	profileWidth : 1.0
-};
-
-
-const chuaData = { 
-
-	equationX : "a * (y - x)",
-	equationY : "(b - a) * x - x*z + b*y",
-	equationZ : "x * y - c*z",
-
-	constValues : { 
-		"a" : 40,
-		"b" : 28,
-		"c" : 3
-	},
-
-	startX :  0.1,
-	startY : -0.1,
-	startZ :  0.8,
-
-	nPoints      : 3500,
-	stepSize     : 5e-3,
-	profileWidth : 1.0
-};
-
-
-const luchenData = { 
-
-	equationX : "a * (y - x)",
-	equationY : "x - x*z + b*y + c",
-	equationZ : "x * y - d*z",
-
-	constValues : { 
-		"a" : 36,
-		"b" : 20,
-		"c" : -15.15,
-		"d" : 3
-	},
-
-	startX :  0.1,
-	startY : -0.1,
-	startZ :  0.8,
-
-	nPoints      : 3500,
-	stepSize     : 5e-3,
-	profileWidth : 1.0
-};
-
-
-const rosslerData = { 
-
-	equationX : "- y - z",
-	equationY : "a + y * (x - b)",
-	equationZ : "x + c*z",
-
-	constValues : { 
-		"a" : 0.1,
-		"b" : 17,
-		"c" : 0.1
-	},
-
-	startX :  0.1,
-	startY : -0.1,
-	startZ :  0.8,
-
-	nPoints      : 3500,
-	stepSize     : 5e-3,
-	profileWidth : 1.0
-};
-
-
-const aizawaData = { 
-
-	equationX : "(z - a) * x - b*y",
-	equationY : "b*x + (z - a) * y",
-	equationZ : "c + d*z - 1/3 * z**3 - (x**2 + y**2) * (1 + e*z) + f * z*x**3",
-
-	constValues : { 
-		"a" : 0.7,
-		"b" : 3.5,
-		"c" : 0.6,
-		"d" : 0.9,
-		"e" : 0.25,
-		"f" : 0.1
-	},
-
-	startX :  0.05,
-	startY : -0.15,
-	startZ :  2.8,
-
-	nPoints      : 3500,
-	stepSize     : 5e-3,
-	profileWidth : 0.05
-};
-
-
-// get all the preset data objects
-const presetsData = { "lorenz"  : lorenzData,
-			          "chua"    : chuaData, 
-			          "lu chen" : luchenData,
-			          "rossler" : rosslerData,
-			          "aizawa"  : aizawaData  };
-
 
 function detectConstNames() {
 
 	// get a string of the 3 equations
 	const equationString = `${equationXInput.value} ${equationYInput.value} ${equationZInput.value}`;
 
-	// regex that finds all single characters like a, b, t, but not xyz
-	const charDetector = /\b[^xyz_\W\d]\b/g;
+	// regex that finds all single characters like a, B, t, but not xyz
+	const charDetector = /\b[a-wA-Z]\b/g;
 
 	// get the matches of the regex 
 	const matches = equationString.match(charDetector);
@@ -246,7 +288,7 @@ function constInputToReplaceFunc( constInput ) {
 	const constNameRegex = new RegExp( `\\b${constName}\\b`, 'g' );
 
 	// return a function that wil replace the const letter with its value
-	return str => str.replaceAll( constNameRegex, constValue );
+	return str => str.replaceAll( constNameRegex, ` ${constValue}` );
 }
 
 
@@ -256,8 +298,7 @@ function tryEvaluateEquation( equationInput, replaceConstsFunc ) {
 	equationInput.classList.remove( "error" );
 
 	// replace consts in the equation string
-	const replacedFuncString = replaceConstsFunc( equationInput.value );
-
+	let replacedFuncString = replaceConstsFunc( equationInput.value );
 
 	let evaledFunc;
 	try {
@@ -266,10 +307,11 @@ function tryEvaluateEquation( equationInput, replaceConstsFunc ) {
 		evaledFunc = eval( `(x,y,z) => ${replacedFuncString}` );
 		evaledFunc(0,0,0);
 	}
-	catch {
+	catch(err) {
 
 		// if that fails add the red error border
 		equationInput.classList.add( "error" );
+		throw err;
 	}
 
 	return evaledFunc;
@@ -291,12 +333,14 @@ function updateEquations() {
 	const zFunc = tryEvaluateEquation( equationZInput, replaceConstsFunc );
 
 	// if any of the funcs didnt come through just return
-	if( !xFunc || !yFunc || !zFunc ) return;
+	if( !xFunc || !yFunc || !zFunc ) return false;
 
 	// set the new fr function
 	fr = ([ x, y, z ]) => [ xFunc( x,y,z ),
 							yFunc( x,y,z ),
 							zFunc( x,y,z ) ];
+
+	return true;
 }
 
 
@@ -340,8 +384,8 @@ function recalculate() {
                { normal: -0.031*uProfileWidth, curve:  1.095*uProfileWidth } ,
               ];
 
-    // update the attractor equations
-    updateEquations();
+    // update the attractor equations but return if the equations are invalid
+    if( !updateEquations() ) return;
 
 	// update the model
 	updateGeometry();

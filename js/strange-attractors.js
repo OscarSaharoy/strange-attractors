@@ -13,8 +13,10 @@
 // todo:
 // scrolling the ui only when not covered by geometry, and scrolling it shouldnt cause redraw
 // sort out local axis alignment
+// make sure you can see equations however long they are
 // mobile layout
 // use webgl2/dont require float textures
+// reduce number of extensions needed
 // make ui elements work on safari
 // animate geometry generation
 // performance tuning
@@ -22,6 +24,9 @@
 // progressive rendering
 // sliders (not that important)
 // ray tracing??
+
+// bugs:
+// shadows are sometimes dodgy - all in shadow or light
 
 
 function drawLoop( gl ) {
@@ -227,7 +232,7 @@ mat4.lookAt( uSunViewMatrix, uSunPos , [0,0,0], [0,1,0] );
 const renderProgram = makeRenderProgram();
 
 // make the shadow map program and framebuffer
-const uShadowMapSize       = Math.max(canvas.width, canvas.height)*1.6;
+const uShadowMapSize       = Math.max(canvas.width, canvas.height);
 const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
 const shadowMapProgram     = makeShadowMapProgram();
 
