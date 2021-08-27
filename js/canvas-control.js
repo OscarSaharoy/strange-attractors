@@ -125,20 +125,25 @@ function panAndZoom() {
 
 function wheel( event ) {
 
-    // prevent browser from doing anything
-    // event.preventDefault?.();
+    // get the largest value that uiScrollElement.scrollHeight can take +/-1
+    const scrollTopMax = uiScrollElement.scrollHeight - uiScrollElement.clientHeight;
 
+    // handle the case where the cursor is over the ui entries etc
     if( uiScrollElement.contains( event.target ) ) {
 
-        if( furthestLeft < -0.6 ) event.preventDefault();
+        // under these conditions, prevent default scroll and zoom the geometry
+        if( ( furthestLeft < -0.6 )
+         || ( event.deltaY < 0 && uiScrollElement.scrollTop == 0 )
+         || ( event.deltaY > 0 && uiScrollElement.scrollTop + 1 > scrollTopMax ) ) event.preventDefault();
+        
+        // in other conditions, return from the function and scroll the ui
         else return;
     }
 
-    // if( event.target != document.body ) return;
-
-    // adjust the zoom level and update the container
+    // limit zoom amount to avoid zooming through the origin
     const zoomAmount = Math.max( -0.2, event.deltaY / 600 );
 
+    // move the view position towards or away from the origin
     vec3.scale( uViewPos, uViewPos, 1 + zoomAmount );
     mat4.lookAt( uViewMatrix, uViewPos, [0,0,0], [0,1,0] );
 
@@ -146,9 +151,10 @@ function wheel( event ) {
     shouldRedraw = true;
 }
 
+
 // add event listeners to body
 document.body.addEventListener( "pointerdown",  pointerdown );
 document.body.addEventListener( "pointerup",    pointerup   );
 document.body.addEventListener( "pointerleave", pointerup   );
 document.body.addEventListener( "pointermove",  pointermove );
-document.body.addEventListener( "wheel",        wheel      , {passive: false} );
+document.body.addEventListener( "wheel",        wheel, {passive: false} );

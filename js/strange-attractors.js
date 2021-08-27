@@ -11,7 +11,6 @@
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
 // todo:
-// scrolling the ui only when not covered by geometry, and scrolling it shouldnt cause redraw
 // sort out local axis alignment
 // make sure you can see equations however long they are
 // mobile layout

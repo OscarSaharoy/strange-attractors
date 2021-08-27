@@ -19,7 +19,7 @@ const lorenzData = {
 	startZ :  8.8,
 
 	nPoints      : 3500,
-	stepSize     : 5e-3,
+	stepSize     : 0.01,
 	profileWidth : 1.0
 };
 
