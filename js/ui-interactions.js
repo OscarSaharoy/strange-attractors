@@ -30,14 +30,14 @@ const chuaData = {
 	equationZ : "x * y - c*z",
 
 	constValues : { 
-		"a" : 40,
-		"b" : 28,
-		"c" : 3
+		"a" : 37.9,
+		"b" : 29,
+		"c" : 4.4
 	},
 
-	startX :  0.1,
-	startY : -0.1,
-	startZ :  0.8,
+	startX : -0.1,
+	startY :  0.5,
+	startZ : -0.6,
 
 	nPoints      : 3500,
 	stepSize     : 5e-3,
@@ -392,6 +392,9 @@ function recalculate() {
 
 	shouldRedraw = true;
 }
+
+window.addEventListener( "keydown", e => e.ctrlKey && (e.key === "q" || e.key === "Q") ? recalculate() : 0 );
+
 
 
 // apply the lorenz preset and calculate the geometry
