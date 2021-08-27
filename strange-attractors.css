@@ -8,7 +8,7 @@
 	user-select: none;
 	box-sizing: border-box;
 	--grey: #222222;
-	--background: #fafafa;
+	--background: #ffffff;
 	--canvas-background: #ffffff;
 	--top-whitespace: min( 10vh, 10vw );
  	touch-action: none;

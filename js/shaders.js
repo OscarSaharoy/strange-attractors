@@ -53,6 +53,7 @@ uniform sampler2D uOcclusionMap;
 uniform float uShadowMapSize;
 uniform vec2 uSampleOffsets[8];
 uniform int uFrame;
+uniform bool uFloatTexturesAvailable;
 
 varying vec4 vWorldPos;
 varying vec4 vProjectedTexcoord;
@@ -60,6 +61,12 @@ varying vec3 vSurfaceToSun;
 varying vec3 vSurfaceToView;
 varying vec4 vNormal;
 varying vec2 vTexPos;
+
+
+float decodeDepthTexture( vec2 depthRG ) {
+
+    return depthRG.x + depthRG.y / 255.0;
+}
 
 
 float rand( float i ) {
@@ -71,7 +78,7 @@ float rand( float i ) {
 float shadowLight() {
 
     vec3 projectedTexcoord = vProjectedTexcoord.xyz / vProjectedTexcoord.w;
-    float currentDepth     = projectedTexcoord.z;
+    float currentDepth     = projectedTexcoord.z * 0.5 + 0.5;
 
     vec2 texPos = projectedTexcoord.xy * 0.5 + 0.5;
 
@@ -81,7 +88,7 @@ float shadowLight() {
 
         vec2 offset = uSampleOffsets[i - (i>7?8:0) ] + (rand(float(i))-0.5)*0.4;
 
-        float projectedDepth = texture2D( uShadowMap, texPos + offset * uShadowMapSize * 4e-7 ).r;
+        float projectedDepth = decodeDepthTexture( texture2D( uShadowMap, texPos + offset * uShadowMapSize * 4e-7 ).rg );
         outval += (projectedDepth < currentDepth - 0.004) ? 0.0 : 1.0 / float(SHADOW_SAMPLES);
     }
 
@@ -100,7 +107,7 @@ void main() {
 
     float diffuse  = dot( vNormal.xyz, surfaceToSunDir );
     float specular = dot( vNormal.xyz, halfway         );
-    float ambient  = texture2D( uOcclusionMap, vTexPos ).r;
+    float ambient  = uFloatTexturesAvailable ? texture2D( uOcclusionMap, vTexPos ).r : 1.0;
     float shadow   = shadowLight();
 
     specular = clamp( specular, 0.0, 10000.0 );
@@ -130,15 +137,14 @@ uniform mat4 uSunProjectionMatrix;
 
 attribute vec4 aVertexPosition;
 
-varying vec4 vLighting;
+varying float depth;
 
 void main() {
 
     vec4 viewSpacePos = uModelSunViewMatrix  * aVertexPosition;
     gl_Position = uSunProjectionMatrix * viewSpacePos;
 
-    float depth = gl_Position.z / gl_Position.w;
-    vLighting = vec4( vec3(depth), 1.0 );
+    depth = gl_Position.z / gl_Position.w * 0.5 + 0.5;
 }
 
 
@@ -148,11 +154,21 @@ void main() {
 
 precision mediump float;
 
-varying mediump vec4 vLighting;
+varying float depth;
+
+
+vec2 encodeDepthTexture( float depth ) {
+
+    float r = floor( depth * 255.0 ) / 255.0;
+    float g = ( depth - r ) * 255.0;
+
+    return vec2( r, g );
+}
+
 
 void main() {
 
-    gl_FragColor = vLighting;
+    gl_FragColor = vec4( encodeDepthTexture(depth), vec2(1.0) );
 }
 
 

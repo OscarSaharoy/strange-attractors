@@ -44,7 +44,7 @@ function renderShadowMap() {
 function testShadowMap() {
 
     // swtich to render program to update the uniforms
-    gl.useProgram( renderProgram );
+    gl.useProgram( renderProgram.program );
     updateRenderProgramUniforms();
 
     // setup the shadows draw call
@@ -236,6 +236,8 @@ function updateRenderProgramUniforms() {
     gl.uniform1i( renderProgram.uShadowMap, 1 );
 
     gl.uniform1i( renderProgram.uFrame, uFrame );
+    
+    gl.uniform1i( renderProgram.uFloatTexturesAvailable, uFloatTexturesAvailable );
 
     gl.uniform1i( renderProgram.uOcclusionMap, 5 );
 }
@@ -326,25 +328,26 @@ function makeRenderProgram() {
     renderProgram.program = makeShaderProgram( gl, vsSource, fsSource );
 
     // set vars in the render program
-    renderProgram.uViewPos          = gl.getUniformLocation( renderProgram.program, 'uViewPos'          );
-    renderProgram.uSunPos           = gl.getUniformLocation( renderProgram.program, 'uSunPos'           );
-    renderProgram.uNormalMatrix     = gl.getUniformLocation( renderProgram.program, 'uNormalMatrix'     );
-    renderProgram.uProjectionMatrix = gl.getUniformLocation( renderProgram.program, 'uProjectionMatrix' );
-    renderProgram.uModelMatrix      = gl.getUniformLocation( renderProgram.program, 'uModelMatrix'      );
-    renderProgram.uModelViewMatrix  = gl.getUniformLocation( renderProgram.program, 'uModelViewMatrix'  );
-    renderProgram.uSunVPMatrix      = gl.getUniformLocation( renderProgram.program, 'uSunVPMatrix'      );
-    renderProgram.uShadowMap        = gl.getUniformLocation( renderProgram.program, 'uShadowMap'        );
-    renderProgram.uOcclusionMap     = gl.getUniformLocation( renderProgram.program, 'uOcclusionMap'     );
-    renderProgram.uShadowMapSize    = gl.getUniformLocation( renderProgram.program, 'uShadowMapSize'    );
-    renderProgram.uSampleOffsets    = gl.getUniformLocation( renderProgram.program, 'uSampleOffsets'    );
-    renderProgram.uFrame            = gl.getUniformLocation( renderProgram.program, 'uFrame'            );
+    renderProgram.uViewPos                = gl.getUniformLocation( renderProgram.program, 'uViewPos'                );
+    renderProgram.uSunPos                 = gl.getUniformLocation( renderProgram.program, 'uSunPos'                 );
+    renderProgram.uNormalMatrix           = gl.getUniformLocation( renderProgram.program, 'uNormalMatrix'           );
+    renderProgram.uProjectionMatrix       = gl.getUniformLocation( renderProgram.program, 'uProjectionMatrix'       );
+    renderProgram.uModelMatrix            = gl.getUniformLocation( renderProgram.program, 'uModelMatrix'            );
+    renderProgram.uModelViewMatrix        = gl.getUniformLocation( renderProgram.program, 'uModelViewMatrix'        );
+    renderProgram.uSunVPMatrix            = gl.getUniformLocation( renderProgram.program, 'uSunVPMatrix'            );
+    renderProgram.uShadowMap              = gl.getUniformLocation( renderProgram.program, 'uShadowMap'              );
+    renderProgram.uOcclusionMap           = gl.getUniformLocation( renderProgram.program, 'uOcclusionMap'           );
+    renderProgram.uShadowMapSize          = gl.getUniformLocation( renderProgram.program, 'uShadowMapSize'          );
+    renderProgram.uSampleOffsets          = gl.getUniformLocation( renderProgram.program, 'uSampleOffsets'          );
+    renderProgram.uFrame                  = gl.getUniformLocation( renderProgram.program, 'uFrame'                  );
+    renderProgram.uFloatTexturesAvailable = gl.getUniformLocation( renderProgram.program, 'uFloatTexturesAvailable' );
 
-    renderProgram.aVertexPosition   = gl.getAttribLocation(  renderProgram.program, 'aVertexPosition'   );
-    renderProgram.aVertexNormal     = gl.getAttribLocation(  renderProgram.program, 'aVertexNormal'     );
+    renderProgram.aVertexPosition = gl.getAttribLocation(  renderProgram.program, 'aVertexPosition'   );
+    renderProgram.aVertexNormal   = gl.getAttribLocation(  renderProgram.program, 'aVertexNormal'     );
 
-    renderProgram.positionBuffer    = positionBuffer;
-    renderProgram.normalBuffer      = normalBuffer;
-    renderProgram.indexBuffer       = indexBuffer;
+    renderProgram.positionBuffer  = positionBuffer;
+    renderProgram.normalBuffer    = normalBuffer;
+    renderProgram.indexBuffer     = indexBuffer;
 
     // enable the vertex array buffers
     enableArrayBuffer( gl, renderProgram.aVertexPosition, renderProgram.positionBuffer );

@@ -1,6 +1,7 @@
 // Oscar Saharoy 2021
 
 let webgl2 = true;
+let uFloatTexturesAvailable = true;
 
 function initgl( canvasID ) {
 
@@ -10,7 +11,7 @@ function initgl( canvasID ) {
     // try to get webgl2 context but if not fallback to webgl1
     let gl = false;//canvas.getContext("webgl2", {antialias: true});
     
-    if( !gl || false ) {
+    if( !gl ) {
 
         gl = canvas.getContext("webgl", {antialias: true});
         webgl2 = false;
@@ -27,12 +28,13 @@ function initgl( canvasID ) {
             return console.log( "WebGL extension WEBGL_depth_texture not supported :(" );
 
 
-        if( !gl.getExtension('OES_texture_float') )
+        if( !gl.getExtension('OES_texture_float') ) {
 
+            uFloatTexturesAvailable = false;
             return console.log( "WebGL extension OES_texture_float not supported :(" );
+        }
 
-
-        if( !gl.getExtension('OES_texture_float_linear') )
+        if( uFloatTexturesAvailable && !gl.getExtension('OES_texture_float_linear') )
 
             return console.log( "WebGL extension OES_texture_float_linear not supported :(" );
     }
@@ -166,7 +168,7 @@ function enableArrayBuffer( gl, attribute, buffer ) {
 }
 
 
-function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTexUnit=gl.TEXTURE1 ) {
+function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTexUnit=gl.TEXTURE1, floatTexture=false ) {
 
     // set depth texture unit active
     gl.activeTexture( depthTexUnit );
@@ -219,7 +221,11 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
     gl.bindTexture(gl.TEXTURE_2D, colorTexture);
 
     // need different internal format depending on webgl version
-    const colorInternalFormat = webgl2 ? gl.RGBA32F : gl.RGBA;
+    let colorInternalFormat = webgl2 ? gl.RGBA32F : gl.RGBA;
+    colorInternalFormat     = floatTexture ? colorInternalFormat : gl.RGBA;
+
+    // set format depending on whether we're using a float texture or not
+    const colorFormat = floatTexture ? gl.FLOAT : gl.UNSIGNED_BYTE;
 
     // setup that texture
     gl.texImage2D(
@@ -230,7 +236,7 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
         height,
         0,
         gl.RGBA,
-        gl.FLOAT, // can change to gl.FLOAT for nicer or gl.UNSIGNED_BYTE for faster
+        colorFormat,
         null
     );
 

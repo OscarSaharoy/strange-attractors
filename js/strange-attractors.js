@@ -11,13 +11,11 @@
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
 // todo:
-// sort out local axis alignment
-// make sure you can see equations however long they are
-// mobile layout
 // use webgl2/dont require float textures
 // reduce number of extensions needed
 // make ui elements work on safari
 // animate geometry generation
+// mobile layout
 // performance tuning
 // download stl
 // progressive rendering
@@ -26,7 +24,10 @@
 
 // bugs:
 // shadows are sometimes dodgy - all in shadow or light
+// fix colour inputs
 
+// wont fix
+// make sure you can see equations however long they are
 
 function drawLoop( gl ) {
 
@@ -46,9 +47,9 @@ function drawLoop( gl ) {
 
     renderShadowMap();
     // testShadowMap();
-    renderDepthBuffer();
+    if( uFloatTexturesAvailable ) renderDepthBuffer();
     // testDepthBuffer();
-    renderAmbientOcclusion();
+    if( uFloatTexturesAvailable ) renderAmbientOcclusion();
     // testAmbientOcclusion();
     renderScene();
 
@@ -235,14 +236,19 @@ const uShadowMapSize       = Math.max(canvas.width, canvas.height);
 const shadowMapFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE0, gl.TEXTURE1 );
 const shadowMapProgram     = makeShadowMapProgram();
 
-// create the depth program and framebuffer
-const depthFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE2, gl.TEXTURE3 );
-const depthProgram     = makeDepthProgram();
+let depthFramebuffer, depthProgram, ambientOcclusionFramebuffer, ambientOcclusionProgram;
 
-// create the ambient occlusion program and framebuffer
-const ambientOcclusionFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE4, gl.TEXTURE5 );
-const ambientOcclusionProgram     = makeAmbientOcclusionProgram();
+// only create ambient occlusion textures if we have float textures
+if( uFloatTexturesAvailable ) {
 
+    // create the depth program and framebuffer
+    depthFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE2, gl.TEXTURE3, floatTexture=true );
+    depthProgram     = makeDepthProgram( depthFramebuffer );
+
+    // create the ambient occlusion program and framebuffer
+    ambientOcclusionFramebuffer = createFramebuffer( gl, uShadowMapSize, uShadowMapSize, gl.TEXTURE4, gl.TEXTURE5 );
+    ambientOcclusionProgram     = makeAmbientOcclusionProgram( ambientOcclusionFramebuffer );
+}
 
 // start the draw loop
 drawLoop( gl );

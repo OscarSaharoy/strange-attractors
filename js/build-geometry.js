@@ -40,6 +40,8 @@ function calcPointRK4( point, dt ) {
 }
 
 
+let lastCurve  = [1, 0, 0];
+
 function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
 
     // calculate the vector tangent to the curve
@@ -52,13 +54,16 @@ function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
     const prevToCurrent = v3sub( currentPoint, prevPoint );
     const currentToNext = v3sub( nextPoint, currentPoint );
 
-    const nonNormalisedNormal = v3cross( currentToNext, prevToCurrent );
-    // const nonNormalisedNormal = v3cross( [1,0,0], tangent );
+    const nonNormalisedNormal = v3cross( lastCurve, tangent );
     const normal = v3norm( nonNormalisedNormal );
 
     // calculate the vector in the direction of curvature (toward centre of curvature)
 
     const curve = v3cross( tangent, normal );
+
+    // cache this curve vector for the next iteration
+    // allows the profile to have a consistent orientation
+    lastCurve = curve;
 
     // return 3 unit vectors defining local coordinate system
 
@@ -81,7 +86,7 @@ function calcVerts( currentPoint, vertOffsets, normal, curve ) {
 
 function formEdges( currentVerts, profileEdges, sharpEdges=sharpEdges ) {
 
-    const edges  = [];
+    const edges = [];
 
     for( let i = 0; i < profileEdges; ++i ) {
 

@@ -64,7 +64,7 @@ const aizawaData = {
 	startZ :  2.8,
 
 	nPoints      : 3500,
-	stepSize     : 5e-3,
+	stepSize     : 0.0051,
 	profileWidth : 0.05
 };
 
