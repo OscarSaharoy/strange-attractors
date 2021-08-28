@@ -20,29 +20,29 @@ function initgl( canvasID ) {
         if( !gl.getExtension('OES_element_index_uint') )
             
             // if its not supported give an error message
-            return console.log( "WebGL extension OES_element_index_uint not supported :(" );
+            console.log( "WebGL extension OES_element_index_uint not supported :(" );
 
 
         if( !gl.getExtension('WEBGL_depth_texture') )
 
-            return console.log( "WebGL extension WEBGL_depth_texture not supported :(" );
+            console.log( "WebGL extension WEBGL_depth_texture not supported :(" );
 
 
         if( !gl.getExtension('OES_texture_float') ) {
 
             uFloatTexturesAvailable = false;
-            return console.log( "WebGL extension OES_texture_float not supported :(" );
+            console.log( "WebGL extension OES_texture_float not supported :(" );
         }
 
         if( uFloatTexturesAvailable && !gl.getExtension('OES_texture_float_linear') )
 
-            return console.log( "WebGL extension OES_texture_float_linear not supported :(" );
+            console.log( "WebGL extension OES_texture_float_linear not supported :(" );
     }
     else {
 
         if( !gl.getExtension('EXT_color_buffer_float') )
 
-            return console.log( "WebGL2 extension EXT_color_buffer_float not supported :(" );
+           console.log( "WebGL2 extension EXT_color_buffer_float not supported :(" );
     }
 
 

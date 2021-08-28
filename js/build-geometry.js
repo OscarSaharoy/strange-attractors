@@ -75,8 +75,8 @@ function calcVerts( currentPoint, vertOffsets, normal, curve ) {
 
     // funtion to calculate the vertex position from the vertOffset data
     const offsetVert = vertOffset => v3sum( currentPoint,
-                                            v3scale( normal, vertOffset.normal ),
-                                            v3scale( curve , vertOffset.curve  )
+                                            v3scale( normal, vertOffset[1] ),
+                                            v3scale( curve , vertOffset[2]  )
                                           );
 
     // calculate the vertex positions and return them
@@ -341,7 +341,7 @@ function calcGeometryDataOp( points, faces, norms, idxs ) {
 
     // calculate vertex positions
 
-    const width = 0.25;
+    const width = uProfileWidth;
 
     let prevTopRightX    = cX + prevNormalX * width,
         prevTopRightY    = cY + prevNormalY * width,

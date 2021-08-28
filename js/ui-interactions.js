@@ -351,38 +351,13 @@ function recalculate() {
 	dt            = +stepSizeInput.value;
 	uProfileWidth = +profileWidthInput.value;
 	nPoints       = +nPointsInput.value;
+	profile       = pentalobeProfile( uProfileWidth );
 	
 	points        = new Array(nPoints);
 	nVerts        = nPoints * 2 * profile.length + 1;
 	verts         = new Float32Array( nVerts*3 );
 	norms         = new Float32Array( nVerts*3 );
 	idxs          = new Uint32Array(  nVerts*3 );
-
-	profile = [
-               { normal: -0.619*uProfileWidth, curve:  0.904*uProfileWidth } ,
-               { normal: -0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
-               { normal: -0.951*uProfileWidth, curve:  0.309*uProfileWidth } ,
-               { normal: -1.051*uProfileWidth, curve:  0.309*uProfileWidth } ,
-
-               { normal: -1.051*uProfileWidth, curve: -0.309*uProfileWidth } ,
-               { normal: -0.951*uProfileWidth, curve: -0.309*uProfileWidth } ,
-               { normal: -0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
-               { normal: -0.619*uProfileWidth, curve: -0.904*uProfileWidth } ,
-
-               { normal: -0.031*uProfileWidth, curve: -1.095*uProfileWidth } ,
-               { normal:  0.000*uProfileWidth, curve: -1.000*uProfileWidth } ,
-               { normal:  0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
-               { normal:  0.669*uProfileWidth, curve: -0.868*uProfileWidth } ,
-               { normal:  1.032*uProfileWidth, curve: -0.368*uProfileWidth } , 
-               { normal:  0.951*uProfileWidth, curve: -0.309*uProfileWidth } , 
-
-               { normal:  0.951*uProfileWidth, curve:  0.309*uProfileWidth } , 
-               { normal:  1.032*uProfileWidth, curve:  0.368*uProfileWidth } , 
-               { normal:  0.669*uProfileWidth, curve:  0.868*uProfileWidth } ,
-               { normal:  0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
-               { normal:  0.000*uProfileWidth, curve:  1.000*uProfileWidth } ,
-               { normal: -0.031*uProfileWidth, curve:  1.095*uProfileWidth } ,
-              ];
 
     // update the attractor equations but return if the equations are invalid
     if( !updateEquations() ) return;

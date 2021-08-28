@@ -11,13 +11,13 @@
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
 // todo:
-// use webgl2/dont require float textures
-// reduce number of extensions needed
-// make ui elements work on safari
-// animate geometry generation
-// mobile layout
 // performance tuning
+// animate geometry generation
+// make ui elements work on safari
+// mobile layout
+// reduce number of extensions needed
 // download stl
+// use webgl2 when possible
 // progressive rendering
 // sliders (not that important)
 // ray tracing??
@@ -25,6 +25,7 @@
 // bugs:
 // shadows are sometimes dodgy - all in shadow or light
 // fix colour inputs
+// sneaky texture packing in shadow shader glitches on mobile
 
 // wont fix
 // make sure you can see equations however long they are
@@ -77,33 +78,6 @@ function updateGeometry() {
     // build the geometry from the points
     calcGeometryData( points, verts, norms, idxs, profile, sharpEdges=sharpEdges );
 
-    if( debugGeom = false ) {
-
-        verts = Float32Array.from( [ 0, 0, 0,
-                                     1, 0, 0,
-                                     1, 1, 0,
-                                     0, 1, 0,
-
-                                     0, 0, 0,
-                                     0, 0, 1,
-                                     1, 0, 1,
-                                     1, 0, 0 ] );
-
-        norms = Float32Array.from( [ 0, 0, 1,
-                                     0, 0, 1,
-                                     0, 0, 1,
-                                     0, 0, 1,
-
-                                     0, 1, 0,
-                                     0, 1, 0,
-                                     0, 1, 0,
-                                     0, 1, 0, ] );
-
-        idxs  = Uint32Array.from(  [ 0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7 ] );
-
-        nVerts = 4;
-    }
-
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
     fillBuffer( gl, gl.ARRAY_BUFFER        , normalBuffer  , norms );
@@ -113,44 +87,58 @@ function updateGeometry() {
 
 // vertOffsets defines the cross section of the geometry 
 let uProfileWidth = 1;
-let vertOffsets = [ 
-                    { normal:  uProfileWidth, curve:  0             } ,
-                    { normal:  0            , curve:  uProfileWidth } ,
-                    { normal: -uProfileWidth, curve:  0             } ,
-                    { normal:  0            , curve: -uProfileWidth } 
-                  ];
 
-let vertOffsets1 = ( n => new Array(n)
-                             .fill(null)
-                             .map( (val,i) => 6.28*i/n )
-                             .map( x => ({normal: uProfileWidth*Math.cos(x), curve: uProfileWidth*Math.sin(x)}) ) 
-                  )(10);
+const squareProfile = width => 
+                  [ [  width,  0    , 0 ] ,
+                    [  0    ,  width, 0 ] ,
+                    [ -width,  0    , 0 ] ,
+                    [  0    , -width, 0 ] ];
 
-let vertOffsets2 = [ 
-                    { normal: -0.619*uProfileWidth, curve:  0.904*uProfileWidth } ,
-                    { normal: -0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
-                    { normal: -0.951*uProfileWidth, curve:  0.309*uProfileWidth } ,
-                    { normal: -1.051*uProfileWidth, curve:  0.309*uProfileWidth } ,
+const circleProfile = (n, width) => 
+                    new Array(n)
+                       .fill(null)
+                       .map( (val,i) => 6.28*i/n )
+                       .map( x => [ 0, width*Math.cos(x), width*Math.sin(x) ] );
 
-                    { normal: -1.051*uProfileWidth, curve: -0.309*uProfileWidth } ,
-                    { normal: -0.951*uProfileWidth, curve: -0.309*uProfileWidth } ,
-                    { normal: -0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
-                    { normal: -0.619*uProfileWidth, curve: -0.904*uProfileWidth } ,
+const pentalobeProfile = width =>
+                  [ [ 0, -0.619*width,  0.904*width ] ,
+                    [ 0, -0.588*width,  0.809*width ] ,
+                    [ 0, -0.951*width,  0.309*width ] ,
+                    [ 0, -1.051*width,  0.309*width ] ,
 
-                    { normal: -0.031*uProfileWidth, curve: -1.095*uProfileWidth } ,
-                    { normal:  0.000*uProfileWidth, curve: -1.000*uProfileWidth } ,
-                    { normal:  0.588*uProfileWidth, curve: -0.809*uProfileWidth } ,
-                    { normal:  0.669*uProfileWidth, curve: -0.868*uProfileWidth } ,
-                    { normal:  1.032*uProfileWidth, curve: -0.368*uProfileWidth } , 
-                    { normal:  0.951*uProfileWidth, curve: -0.309*uProfileWidth } , 
+                    [ 0, -1.051*width, -0.309*width ] ,
+                    [ 0, -0.951*width, -0.309*width ] ,
+                    [ 0, -0.588*width, -0.809*width ] ,
+                    [ 0, -0.619*width, -0.904*width ] ,
 
-                    { normal:  0.951*uProfileWidth, curve:  0.309*uProfileWidth } , 
-                    { normal:  1.032*uProfileWidth, curve:  0.368*uProfileWidth } , 
-                    { normal:  0.669*uProfileWidth, curve:  0.868*uProfileWidth } ,
-                    { normal:  0.588*uProfileWidth, curve:  0.809*uProfileWidth } ,
-                    { normal:  0.000*uProfileWidth, curve:  1.000*uProfileWidth } ,
-                    { normal: -0.031*uProfileWidth, curve:  1.095*uProfileWidth } ,
-                   ];
+                    [ 0, -0.031*width, -1.095*width ] ,
+                    [ 0,  0.000*width, -1.000*width ] ,
+                    [ 0,  0.588*width, -0.809*width ] ,
+                    [ 0,  0.669*width, -0.868*width ] ,
+                    [ 0,  1.032*width, -0.368*width ] , 
+                    [ 0,  0.951*width, -0.309*width ] , 
+
+                    [ 0,  0.951*width,  0.309*width ] , 
+                    [ 0,  1.032*width,  0.368*width ] , 
+                    [ 0,  0.669*width,  0.868*width ] ,
+                    [ 0,  0.588*width,  0.809*width ] ,
+                    [ 0,  0.000*width,  1.000*width ] ,
+                    [ 0, -0.031*width,  1.095*width ] ];
+
+const hexProfile = width =>
+                    [ [ 0,  0.161*width,  0.906*width ],
+                      [ 0,  0.866*width, -0.313*width ],
+                      [ 0,  0.866*width,  0.313*width ],
+                      [ 0,  0.161*width, -0.906*width ],
+                      [ 0,  0.704*width, -0.593*width ],
+                      [ 0, -0.704*width, -0.593*width ],
+                      [ 0, -0.161*width, -0.906*width ],
+                      [ 0, -0.866*width,  0.313*width ],
+                      [ 0, -0.866*width, -0.313*width ],
+                      [ 0, -0.161*width,  0.906*width ],
+                      [ 0,  0.704*width,  0.593*width ],
+                      [ 0, -0.704*width,  0.593*width ] ];
+
 
 
 // calculation variables
@@ -159,11 +147,10 @@ let dt      = 5e-3;
 let nPoints = 3500;
 let points  = new Array(nPoints);
 let start   = [ 0.1, -0.1, 8.8 ];
-
+let profile = pentalobeProfile( uProfileWidth );
 
 // controls whether the mesh is rendered with sharp edges
 let sharpEdges = true;
-let profile = vertOffsets2;
 
 // arrays that will contain the strange attractor geometry data
 let nVerts = nPoints * 2 * profile.length + 1;
