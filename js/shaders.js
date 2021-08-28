@@ -88,7 +88,7 @@ float shadowLight() {
 
         vec2 offset = uSampleOffsets[i - (i>7?8:0) ] + (rand(float(i))-0.5)*0.4;
 
-        float projectedDepth = decodeDepthTexture( texture2D( uShadowMap, texPos + offset * uShadowMapSize * 4e-7 ).rg );
+        float projectedDepth = decodeDepthTexture( texture2D( uShadowMap, texPos + offset * uShadowMapSize * 6e-7 ).rg );
         outval += (projectedDepth < currentDepth - 0.004) ? 0.0 : 1.0 / float(SHADOW_SAMPLES);
     }
 
