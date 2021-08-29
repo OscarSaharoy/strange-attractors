@@ -13,7 +13,6 @@
 // todo:
 // performance tuning
 // animate geometry generation
-// make ui elements work on safari
 // mobile layout
 // reduce number of extensions needed
 // download stl
