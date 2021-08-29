@@ -1,0 +1,2 @@
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=C:\Programming\Scripts\strange-attractors\rust\target\wasm32-unknown-unknown\release\build\typenum-66bd88462d865e61\out\consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=C:\Programming\Scripts\strange-attractors\rust\target\wasm32-unknown-unknown\release\build\typenum-66bd88462d865e61\out\op.rs

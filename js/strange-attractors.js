@@ -13,7 +13,7 @@
 // todo:
 // performance tuning
 // animate geometry generation
-// mobile layout
+// mobile layout & ability to scroll
 // reduce number of extensions needed
 // download stl
 // use webgl2 when possible

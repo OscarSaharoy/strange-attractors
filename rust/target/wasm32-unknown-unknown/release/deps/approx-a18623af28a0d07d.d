@@ -1,0 +1,11 @@
+C:\Programming\Scripts\strange-attractors\rust\target\wasm32-unknown-unknown\release\deps\approx-a18623af28a0d07d.rmeta: C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\lib.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\abs_diff_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\relative_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\ulps_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\macros.rs
+
+C:\Programming\Scripts\strange-attractors\rust\target\wasm32-unknown-unknown\release\deps\libapprox-a18623af28a0d07d.rlib: C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\lib.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\abs_diff_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\relative_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\ulps_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\macros.rs
+
+C:\Programming\Scripts\strange-attractors\rust\target\wasm32-unknown-unknown\release\deps\approx-a18623af28a0d07d.d: C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\lib.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\abs_diff_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\relative_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\ulps_eq.rs C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\macros.rs
+
+C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\lib.rs:
+C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\abs_diff_eq.rs:
+C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\relative_eq.rs:
+C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\ulps_eq.rs:
+C:\Users\osaha\.cargo\registry\src\github.com-1ecc6299db9ec823\approx-0.5.0\src\macros.rs:
