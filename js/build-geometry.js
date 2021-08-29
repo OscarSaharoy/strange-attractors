@@ -182,6 +182,59 @@ function formEndCapIndices( preVerts, profileEdges, reverseNormal=false ) {
 }
 
 
+function calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges, sharpEdges=sharpEdges ) {
+
+    let firstVert, prevVert;
+
+    firstVert = v3sum( currentPoint,
+                       v3scale( normal, vertOffsets[0][1] ),
+                       v3scale( curve , vertOffsets[0][2] ) );
+
+    prevVert = firstVert;
+
+    const edges = [];
+    const normals = [];
+
+    for( let i = 1; i < profileEdges; ++i ) {
+
+        const currentVert = v3sum( currentPoint,
+                                   v3scale( normal, vertOffsets[i][1] ),
+                                   v3scale( curve , vertOffsets[i][2] ) );
+
+        const newEdge = [ prevVert, currentVert ];
+
+        prevVert = currentVert;
+
+        edges.push( ...newEdge.flat() );
+
+
+        const toNextVert = v3sub( currentVert, prevVert );
+        const newNormal  = v3norm( v3cross( toNextVert, tangent ) );
+
+        const newNormals = [ newNormal, newNormal ];
+
+        normals.push( ...newNormals.flat() );
+    }
+
+    const currentVert = v3sum( currentPoint,
+                               v3scale( normal, vertOffsets[profileEdges-1][1] ),
+                               v3scale( curve , vertOffsets[profileEdges-1][2] ) );
+
+    const newEdge = [ currentVert, firstVert ];
+
+    edges.push( ...newEdge.flat() );
+
+    const toNextVert = v3sub( currentVert, prevVert );
+    const newNormal  = v3norm( v3cross( toNextVert, tangent ) );
+
+    const newNormals = [ newNormal, newNormal ];
+
+    normals.push( ...newNormals.flat() );
+
+    return [edges, normals];
+}
+
+
 function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=true ) {
 
     // todo: add end caps & prevent vertex loops intersecting when curvature of path is large
@@ -242,7 +295,7 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
         // calculate vertex positions at current point
 
-        let newVerts = calcVerts( currentPoint, vertOffsets, normal, curve );
+        const newVerts = calcVerts( currentPoint, vertOffsets, normal, curve );
 
         // each iteration we push 2 corners of each profile edge, each corner has 3 components
         // profileEdges*2*3 = 6*profileEdges
@@ -258,6 +311,10 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
         const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges );
         insertIntoArray( newNormals, norms, vertBase );
+
+        // const [ newEdges, newNormals ] = calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges, sharpEdges=sharpEdges );
+        // insertIntoArray( newEdges, verts, vertBase );
+        // insertIntoArray( newNormals, norms, vertBase );
 
         const newIdxs    = formIndices( preVerts, profileEdges, sharpEdges=sharpEdges );
         insertIntoArray( newIdxs, idxs, idxBase );
