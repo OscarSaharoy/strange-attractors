@@ -11,15 +11,15 @@
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
 // todo:
-// performance tuning
 // animate geometry generation
 // mobile layout & ability to scroll
+// use webgl2 when possible
 // reduce number of extensions needed
 // download stl
-// use webgl2 when possible
+// performance tuning
 // progressive rendering
 // sliders (not that important)
-// ray tracing??
+// ray tracing?? (probably not)
 
 // bugs:
 // shadows are sometimes dodgy - all in shadow or light

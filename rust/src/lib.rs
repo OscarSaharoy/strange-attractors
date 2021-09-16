@@ -4,10 +4,11 @@ extern crate nalgebra_glm as glm;
 use nalgebra_glm::Vec3;
 
 #[wasm_bindgen]
-pub fn test() -> f32 {
+pub fn test( inValue: f32 ) -> f32 {
     
-    let vec : Vec3 = glm::vec3( 1.7, 1.7, 1.7 );
-    vec.x
+    let vec : Vec3 = glm::vec3( 1.7, inValue, 1.7 );
+
+    vec[1]
 }
 
 
