@@ -2,6 +2,7 @@
 
 
 const v3zero  = [0, 0, 0];
+const v3inf   = [Infinity, Infinity, Infinity];
 
 const v3neg   = (vA    ) => vA.map( vi => -vi );
 

@@ -40,9 +40,7 @@ function calcPointRK4( point, dt ) {
 }
 
 
-let lastCurve  = [1, 0, 0];
-
-function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
+function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint, lastCurve ) {
 
     // calculate the vector tangent to the curve
     
@@ -60,10 +58,6 @@ function calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint ) {
     // calculate the vector in the direction of curvature (toward centre of curvature)
 
     const curve = v3cross( tangent, normal );
-
-    // cache this curve vector for the next iteration
-    // allows the profile to have a consistent orientation
-    lastCurve = curve;
 
     // return 3 unit vectors defining local coordinate system
 
@@ -84,15 +78,23 @@ function calcVerts( currentPoint, vertOffsets, normal, curve ) {
 }
 
 
-function formEdges( currentVerts, profileEdges, sharpEdges=sharpEdges ) {
+function formEdges( currentVerts, profileEdges ) {
 
+    // array to hold vertex positions as "edges" so storing
+    // components of vertexes ABCD in the order A-B B-C C-D D-A
     const edges = [];
 
+    // loop the over the number of edges the profile has
     for( let i = 0; i < profileEdges; ++i ) {
 
-        const ip = (i+1) % profileEdges;
-        const newEdge = [ currentVerts[i], sharpEdges ? currentVerts[ip] : [] ];
+        // i is the index of the current vertx and i_next is the index
+        // of the next one, the one its connected to by an edge
+        const i_next = (i+1) % profileEdges;    
 
+        // make a nested array containing the current and next vertex
+        const newEdge = [ currentVerts[i], currentVerts[i_next] ];
+
+        // flatten the nested array and add that into edges
         edges.push( ...newEdge.flat() );
     }
 
@@ -100,50 +102,43 @@ function formEdges( currentVerts, profileEdges, sharpEdges=sharpEdges ) {
 }
 
 
-function formNormals( currentVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges ) {
+function formNormals( currentVerts, profileEdges, vertOffsets, tangent ) {
 
+    // initialise an empty normals array
     const normals = [];
 
+    // loop over all the profile's edges
     for( let i = 0; i < profileEdges; ++i ) {
 
-        let newNormals;
+        // get index of next vertex in currentVerts
+        const i_next = (i+1) % profileEdges;
 
-        if( sharpEdges ) {
-        
-            const ip = (i+1) % profileEdges;
+        // get a vector from this vert to the next and cross it with the tangent to get a normal
+        const toNextVert = v3sub( currentVerts[i_next], currentVerts[i] );
+        const normal     = v3norm( v3cross( toNextVert, tangent ) );
 
-            const toNextVert = v3sub( currentVerts[ip], currentVerts[i] );
-            const normal     = v3norm( v3cross( toNextVert, tangent ) );
-
-            newNormals = [ normal, normal ];
-        }
-        else {
-
-            const ip = (i+1) % profileEdges;
-            const iq = (i-1) + i==0?profileEdges:0;
-
-            const toNextVert = v3sub( currentVerts[ip], currentVerts[iq] );
-            const normal     = v3norm( v3cross( toNextVert, tangent ) );
-
-            newNormals = [ normal ];
-        }
-
-        normals.push( ...newNormals.flat() );
+        // we need two normals, one for each vert in the edge; push those to normals
+        normals.push( ...[ normal, normal ].flat() );
     }
 
     return normals;
 }
 
 
-function formIndices( preVerts, profileEdges, sharpEdges=sharpEdges ) {
+function formIndices( preVerts, profileEdges ) {
 
+    // make a blank indexes array and get the vertex step which is 1 for smooth shading
+    // and 2 for flat shading
     const idxs = [];
-    const vertIndexStep = 1 + sharpEdges;
 
+    // loop over the number of edges, so 1 iteration per quad face
     for( let j = 0; j < profileEdges; ++j ) {
 
-        const newIdxs = [ 0, 1, 2*profileEdges, 1, 2*profileEdges+1, 2*profileEdges ].map( x => x + preVerts + j*vertIndexStep );
+        // get the indexes of the quad using a little map - this is 2 triangles so 6 indexes
+        const newIdxs = [ 0, 1, 2*profileEdges, 1, 2*profileEdges+1, 2*profileEdges ]
+                            .map( x => x + preVerts + 2*j );
 
+        // push the indexes into idxs
         idxs.push( ...newIdxs );
     }
 
@@ -153,20 +148,24 @@ function formIndices( preVerts, profileEdges, sharpEdges=sharpEdges ) {
 
 function insertIntoArray( source, target, start ) {
 
-    for( let i = start; i < start + source.length; ++i )
+    // just loop over all the elements in the source array, putting them into the target array
+    for( let i = 0; i < source.length; ++i )
 
-        target[i] = source[i - start];
+        target[ start + i ] = source[i];
 }
 
 
 function formEndCapVerts( currentPoint, vertOffsets, normal, curve ) {
 
+    // get the verts that make up the end cap, so one central one and then ones around the edge as normal
     return [ currentPoint, ...calcVerts(currentPoint, vertOffsets, normal, curve) ].flat();
 }
 
 
 function formEndCapNormals( tangent, profileEdges, reverseNormal=false ) {
 
+    // the normals are all aligned along the tangent vector, so just repeat that
+    // for as many vertices as we have and reverse it if neccessary
     return Array(profileEdges + 1)
           .fill( reverseNormal ? tangent : v3neg(tangent) )
           .flat();
@@ -175,6 +174,7 @@ function formEndCapNormals( tangent, profileEdges, reverseNormal=false ) {
 
 function formEndCapIndices( preVerts, profileEdges, reverseNormal=false ) {
 
+    // form indices for the end cap, basically tell the gpu to draw them in a triangle fan
     return [...Array(profileEdges).keys()]
               .map( v => reverseNormal ? [ 0, v+1, (v+1) % profileEdges + 1 ] : [ v+1, 0, (v+1) % profileEdges + 1 ] )
               .flat()
@@ -182,7 +182,7 @@ function formEndCapIndices( preVerts, profileEdges, reverseNormal=false ) {
 }
 
 
-function calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges, sharpEdges=sharpEdges ) {
+function calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges ) {
 
     let firstVert, prevVert;
 
@@ -235,19 +235,25 @@ function calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges
 }
 
 
-function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=true ) {
+function calcGeometryData( points, verts, norms, idxs, vertOffsets ) {
 
     // todo: add end caps & prevent vertex loops intersecting when curvature of path is large
 
     // the number of edges the profile of the geometry has
     const profileEdges = vertOffsets.length;
 
+    // we use this last curve vector to store the previous point's curve vector
+    // so that the sweep can have a consistent orientation without sudden twists
+    let lastCurve = [0, 0, 1];
+
     // first calculate vertices and normal and curve vectors at the second point of points
 
     let [ prevPoint, currentPoint, nextPoint ] = points.slice(0, 3);
 
-    let [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
+    let [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint, lastCurve );
 
+    // cache the curve vector
+    lastCurve = curve;
 
     // calculate and insert the start cap
 
@@ -274,10 +280,10 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
     const newVerts   = calcVerts( currentPoint, vertOffsets, normal, curve );
 
-    const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
+    const newEdges   = formEdges( newVerts, profileEdges );
     insertIntoArray( newEdges  , verts, startCapVertBase );
 
-    const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges );
+    const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent );
     insertIntoArray( newNormals, norms, startCapVertBase );
 
 
@@ -291,7 +297,10 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 
         // calculate local coordinate basis from curve
 
-        [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint );
+        [ tangent, normal, curve ] = calcLocalCoordinateSystem( prevPoint, currentPoint, nextPoint, lastCurve );
+
+        // cache the curve vector
+        lastCurve = curve;
 
         // calculate vertex positions at current point
 
@@ -302,29 +311,29 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
         // each face takes 6 indices
         // profileEdges*6
 
-        const vertBase   = startCapVertBase + 6 * profileEdges * (idx-1) / (2 - sharpEdges);
-        const preVerts   = startCapPreVerts + 2 * profileEdges * (idx-2) / (2 - sharpEdges);
+        const vertBase   = startCapVertBase + 6 * profileEdges * (idx-1);
+        const preVerts   = startCapPreVerts + 2 * profileEdges * (idx-2);
         const idxBase    = startCapIdxBase  + 6 * profileEdges * (idx-2);
 
-        const newEdges   = formEdges( newVerts, profileEdges, sharpEdges=sharpEdges );
+        const newEdges   = formEdges( newVerts, profileEdges );
         insertIntoArray( newEdges, verts, vertBase );
 
-        const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent, sharpEdges=sharpEdges );
+        const newNormals = formNormals( newVerts, profileEdges, vertOffsets, tangent );
         insertIntoArray( newNormals, norms, vertBase );
 
-        // const [ newEdges, newNormals ] = calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges, sharpEdges=sharpEdges );
+        // const [ newEdges, newNormals ] = calcOp( currentPoint, vertOffsets, tangent, normal, curve, profileEdges );
         // insertIntoArray( newEdges, verts, vertBase );
         // insertIntoArray( newNormals, norms, vertBase );
 
-        const newIdxs    = formIndices( preVerts, profileEdges, sharpEdges=sharpEdges );
+        const newIdxs    = formIndices( preVerts, profileEdges );
         insertIntoArray( newIdxs, idxs, idxBase );
     }
 
 
     // calcluate vertBase and idxBase for end cap
 
-    const endCapVertBase = startCapVertBase + 6 * profileEdges * (points.length-2) / (2 - sharpEdges);
-    const endCapPreVerts = startCapPreVerts + 2 * profileEdges * (points.length-2) / (2 - sharpEdges);
+    const endCapVertBase = startCapVertBase + 6 * profileEdges * (points.length-2);
+    const endCapPreVerts = startCapPreVerts + 2 * profileEdges * (points.length-2);
     const endCapIdxBase  = startCapIdxBase  + 6 * profileEdges * (points.length-3);
 
     // calculate and add in the end cap
@@ -340,360 +349,10 @@ function calcGeometryData( points, verts, norms, idxs, vertOffsets, sharpEdges=t
 }
 
 
-function calcGeometryDataOp( points, faces, norms, idxs ) {
-
-    // first calculate vertices and normal and curve vectors at the second point of points
-
-    // get components of first second and third points
-
-    const pX = points[0][0],
-          pY = points[0][1],
-          pZ = points[0][2];
-
-    const cX = points[1][0],
-          cY = points[1][1],
-          cZ = points[1][2];
-
-    const nX = points[2][0],
-          nY = points[2][1],
-          nZ = points[2][2];
-
-    // calculate tangent vector
-
-    let prevTangentX = nX - pX,
-        prevTangentY = nY - pY,
-        prevTangentZ = nZ - pZ;
-
-    // normalise tangent vector
-
-    const normTangent = 1 / Math.sqrt( prevTangentX*prevTangentX + prevTangentY*prevTangentY + prevTangentZ*prevTangentZ );
-    prevTangentX *= normTangent;
-    prevTangentY *= normTangent;
-    prevTangentZ *= normTangent;
-
-    // calculate normal vector
-
-    let cpdx = cX - pX,
-        cpdy = cY - pY,
-        cpdz = cZ - pZ;
-
-    let ncdx = nX - cX,
-        ncdy = nY - cY,
-        ncdz = nZ - cZ;
-
-    let prevNormalX  = ncdy*cpdz - ncdz*cpdy,
-        prevNormalY  = ncdz*cpdx - ncdx*cpdz,
-        prevNormalZ  = ncdx*cpdy - ncdy*cpdx;
-
-    const normNormal = 1 / Math.sqrt( prevNormalX*prevNormalX + prevNormalY*prevNormalY + prevNormalZ*prevNormalZ );
-    prevNormalX *= normNormal;
-    prevNormalY *= normNormal;
-    prevNormalZ *= normNormal;
-
-    // calculate vector in direction of curvature (already normalised)
-
-    let prevCurveX   = prevTangentY*prevNormalZ - prevTangentZ*prevNormalY,
-        prevCurveY   = prevTangentZ*prevNormalX - prevTangentX*prevNormalZ,
-        prevCurveZ   = prevTangentX*prevNormalY - prevTangentY*prevNormalX;
-
-    // calculate vertex positions
-
-    const width = uProfileWidth;
-
-    let prevTopRightX    = cX + prevNormalX * width,
-        prevTopRightY    = cY + prevNormalY * width,
-        prevTopRightZ    = cZ + prevNormalZ * width;
-
-    let prevBottomRightX = cX + prevCurveX  * width,
-        prevBottomRightY = cY + prevCurveY  * width,
-        prevBottomRightZ = cZ + prevCurveZ  * width;
-
-    let prevTopLeftX     = cX - prevCurveX  * width,
-        prevTopLeftY     = cY - prevCurveY  * width,
-        prevTopLeftZ     = cZ - prevCurveZ  * width;
-
-    let prevBottomLeftX  = cX - prevNormalX * width,
-        prevBottomLeftY  = cY - prevNormalY * width,
-        prevBottomLeftZ  = cZ - prevNormalZ * width;
-
-
-    // loop over all the points except the first and last
-    // and populate the faces, norms and idxs arrays
-    // which will be fed into webgl
-    for( let idx = 2; idx < points.length-1; ++idx ) {
-
-        // get the previous, current and next points
-
-        const prevPoint    = points[idx-1];
-        const currentPoint = points[idx  ];
-        const nextPoint    = points[idx+1];
-
-        // get all the components of the 3 points
-
-        const pX = prevPoint[0],
-              pY = prevPoint[1],
-              pZ = prevPoint[2];
-
-        const cX = currentPoint[0],
-              cY = currentPoint[1],
-              cZ = currentPoint[2];
-
-        const nX = nextPoint[0],
-              nY = nextPoint[1],
-              nZ = nextPoint[2];
-
-        // calculate tangent vector
-
-        let tangentX = nX - pX,
-            tangentY = nY - pY,
-            tangentZ = nZ - pZ;
-
-        // normalise tangent vector
-
-        const normTangent = 1 / Math.sqrt( tangentX*tangentX + tangentY*tangentY + tangentZ*tangentZ );
-        tangentX *= normTangent;
-        tangentY *= normTangent;
-        tangentZ *= normTangent;
-
-        // calculate normal vector
-
-        let cpdx     = cX - pX,
-            cpdy     = cY - pY,
-            cpdz     = cZ - pZ;
-
-        let ncdx     = nX - cX,
-            ncdy     = nY - cY,
-            ncdz     = nZ - cZ;
-
-        let normalX  = ncdy*cpdz - ncdz*cpdy,
-            normalY  = ncdz*cpdx - ncdx*cpdz,
-            normalZ  = ncdx*cpdy - ncdy*cpdx;
-
-        const normNormal = 1 / Math.sqrt( normalX*normalX + normalY*normalY + normalZ*normalZ );
-        normalX *= normNormal;
-        normalY *= normNormal;
-        normalZ *= normNormal;
-
-        // calculate vector in direction of curvature (already normalised)
-
-        let curveX   = tangentY*normalZ - tangentZ*normalY,
-            curveY   = tangentZ*normalX - tangentX*normalZ,
-            curveZ   = tangentX*normalY - tangentY*normalX;
-
-
-        //          ^ normal
-        //          |
-        //          |
-        //  tangent x ---> curve
-
-
-        // calculate vertex positions at current point
-
-        const currentTopRightX    = cX + normalX * width,
-              currentTopRightY    = cY + normalY * width,
-              currentTopRightZ    = cZ + normalZ * width;
-
-        const currentBottomRightX = cX + curveX  * width,
-              currentBottomRightY = cY + curveY  * width,
-              currentBottomRightZ = cZ + curveZ  * width;
-
-        const currentTopLeftX     = cX - curveX  * width,
-              currentTopLeftY     = cY - curveY  * width,
-              currentTopLeftZ     = cZ - curveZ  * width;
-
-        const currentBottomLeftX  = cX - normalX * width,
-              currentBottomLeftY  = cY - normalY * width,
-              currentBottomLeftZ  = cZ - normalZ * width;
-
-
-        // each iteration we push 4 faces each with 4 corners, each corner has 3 components
-        // 4*4*3 = 48
-        // each face takes 6 indices
-        // 4*6 = 24
-
-        let baseIdx    = faces.length/3;
-        const faceBase = 48 * (idx-2);
-        const idxBase  = 24 * (idx-2);
-        const preFaces = 16 * (idx-2);
-
-
-        // left face
-
-        faces[ faceBase      ] = currentTopLeftX ;
-        faces[ faceBase + 1  ] = currentTopLeftY ;
-        faces[ faceBase + 2  ] = currentTopLeftZ ;
-        faces[ faceBase + 3  ] = prevTopLeftX    ;
-        faces[ faceBase + 4  ] = prevTopLeftY    ;
-        faces[ faceBase + 5  ] = prevTopLeftZ    ;
-        faces[ faceBase + 6  ] = prevTopRightX   ;
-        faces[ faceBase + 7  ] = prevTopRightY   ;
-        faces[ faceBase + 8  ] = prevTopRightZ   ;
-        faces[ faceBase + 9  ] = currentTopRightX;
-        faces[ faceBase + 10 ] = currentTopRightY;
-        faces[ faceBase + 11 ] = currentTopRightZ;
-   
-        norms[ faceBase      ] = normalX    ;
-        norms[ faceBase + 1  ] = normalY    ;
-        norms[ faceBase + 2  ] = normalZ    ;
-        norms[ faceBase + 3  ] = prevNormalX;
-        norms[ faceBase + 4  ] = prevNormalY;
-        norms[ faceBase + 5  ] = prevNormalZ;
-        norms[ faceBase + 6  ] = prevNormalX;
-        norms[ faceBase + 7  ] = prevNormalY;
-        norms[ faceBase + 8  ] = prevNormalZ;
-        norms[ faceBase + 9  ] = normalX    ;
-        norms[ faceBase + 10 ] = normalY    ;
-        norms[ faceBase + 11 ] = normalZ    ;
-
-        idxs[  idxBase       ] = 0 + preFaces;
-        idxs[  idxBase  + 1  ] = 1 + preFaces;
-        idxs[  idxBase  + 2  ] = 2 + preFaces;
-        idxs[  idxBase  + 3  ] = 0 + preFaces;
-        idxs[  idxBase  + 4  ] = 2 + preFaces;
-        idxs[  idxBase  + 5  ] = 3 + preFaces;
-
-
-        // right face
-
-        faces[ faceBase + 12 ] = currentTopRightX   ;
-        faces[ faceBase + 13 ] = currentTopRightY   ;
-        faces[ faceBase + 14 ] = currentTopRightZ   ;
-        faces[ faceBase + 15 ] = prevTopRightX      ;
-        faces[ faceBase + 16 ] = prevTopRightY      ;
-        faces[ faceBase + 17 ] = prevTopRightZ      ;
-        faces[ faceBase + 18 ] = prevBottomRightX   ;
-        faces[ faceBase + 19 ] = prevBottomRightY   ;
-        faces[ faceBase + 20 ] = prevBottomRightZ   ;
-        faces[ faceBase + 21 ] = currentBottomRightX;
-        faces[ faceBase + 22 ] = currentBottomRightY;
-        faces[ faceBase + 23 ] = currentBottomRightZ;
-   
-        norms[ faceBase + 12 ] = curveX    ;
-        norms[ faceBase + 13 ] = curveY    ;
-        norms[ faceBase + 14 ] = curveZ    ;
-        norms[ faceBase + 15 ] = prevCurveX;
-        norms[ faceBase + 16 ] = prevCurveY;
-        norms[ faceBase + 17 ] = prevCurveZ;
-        norms[ faceBase + 18 ] = prevCurveX;
-        norms[ faceBase + 19 ] = prevCurveY;
-        norms[ faceBase + 20 ] = prevCurveZ;
-        norms[ faceBase + 21 ] = curveX    ;
-        norms[ faceBase + 22 ] = curveY    ;
-        norms[ faceBase + 23 ] = curveZ    ;
-
-        idxs[  idxBase  + 6  ] = 4 + preFaces;
-        idxs[  idxBase  + 7  ] = 5 + preFaces;
-        idxs[  idxBase  + 8  ] = 6 + preFaces;
-        idxs[  idxBase  + 9  ] = 4 + preFaces;
-        idxs[  idxBase  + 10 ] = 6 + preFaces;
-        idxs[  idxBase  + 11 ] = 7 + preFaces;
-
-
-        // bottom face
-
-        faces[ faceBase + 24 ] = currentBottomRightX;
-        faces[ faceBase + 25 ] = currentBottomRightY;
-        faces[ faceBase + 26 ] = currentBottomRightZ; 
-        faces[ faceBase + 27 ] = prevBottomRightX   ;
-        faces[ faceBase + 28 ] = prevBottomRightY   ;
-        faces[ faceBase + 29 ] = prevBottomRightZ   ; 
-        faces[ faceBase + 30 ] = prevBottomLeftX    ;
-        faces[ faceBase + 31 ] = prevBottomLeftY    ;
-        faces[ faceBase + 32 ] = prevBottomLeftZ    ; 
-        faces[ faceBase + 33 ] = currentBottomLeftX ;
-        faces[ faceBase + 34 ] = currentBottomLeftY ;
-        faces[ faceBase + 35 ] = currentBottomLeftZ ;
-   
-        norms[ faceBase + 24 ] = -normalX    ;
-        norms[ faceBase + 25 ] = -normalY    ;
-        norms[ faceBase + 26 ] = -normalZ    ; 
-        norms[ faceBase + 27 ] = -prevNormalX;
-        norms[ faceBase + 28 ] = -prevNormalY;
-        norms[ faceBase + 29 ] = -prevNormalZ; 
-        norms[ faceBase + 30 ] = -prevNormalX;
-        norms[ faceBase + 31 ] = -prevNormalY;
-        norms[ faceBase + 32 ] = -prevNormalZ; 
-        norms[ faceBase + 33 ] = -normalX    ;
-        norms[ faceBase + 34 ] = -normalY    ;
-        norms[ faceBase + 35 ] = -normalZ    ;
-
-        idxs[  idxBase  + 12 ] = 8  + preFaces;
-        idxs[  idxBase  + 13 ] = 9  + preFaces;
-        idxs[  idxBase  + 14 ] = 10 + preFaces;
-        idxs[  idxBase  + 15 ] = 8  + preFaces;
-        idxs[  idxBase  + 16 ] = 10 + preFaces;
-        idxs[  idxBase  + 17 ] = 11 + preFaces;
-        
-
-        // left face
-
-        faces[ faceBase + 36 ] = currentBottomLeftX;
-        faces[ faceBase + 37 ] = currentBottomLeftY; 
-        faces[ faceBase + 38 ] = currentBottomLeftZ;  
-        faces[ faceBase + 39 ] = prevBottomLeftX   ; 
-        faces[ faceBase + 40 ] = prevBottomLeftY   ; 
-        faces[ faceBase + 41 ] = prevBottomLeftZ   ;  
-        faces[ faceBase + 42 ] = prevTopLeftX      ; 
-        faces[ faceBase + 43 ] = prevTopLeftY      ; 
-        faces[ faceBase + 44 ] = prevTopLeftZ      ; 
-        faces[ faceBase + 45 ] = currentTopLeftX   ; 
-        faces[ faceBase + 46 ] = currentTopLeftY   ; 
-        faces[ faceBase + 47 ] = currentTopLeftZ   ; 
-   
-        norms[ faceBase + 36 ] = -curveX    ;
-        norms[ faceBase + 37 ] = -curveY    ;
-        norms[ faceBase + 38 ] = -curveZ    ;
-        norms[ faceBase + 39 ] = -prevCurveX;
-        norms[ faceBase + 40 ] = -prevCurveY;
-        norms[ faceBase + 41 ] = -prevCurveZ;
-        norms[ faceBase + 42 ] = -prevCurveX;
-        norms[ faceBase + 43 ] = -prevCurveY;
-        norms[ faceBase + 44 ] = -prevCurveZ;
-        norms[ faceBase + 45 ] = -curveX    ;
-        norms[ faceBase + 46 ] = -curveY    ;
-        norms[ faceBase + 47 ] = -curveZ    ;
-
-        idxs[  idxBase  + 18 ] = 12 + preFaces;
-        idxs[  idxBase  + 19 ] = 13 + preFaces;
-        idxs[  idxBase  + 20 ] = 14 + preFaces;
-        idxs[  idxBase  + 21 ] = 12 + preFaces;
-        idxs[  idxBase  + 22 ] = 14 + preFaces;
-        idxs[  idxBase  + 23 ] = 15 + preFaces;
-
-
-        // store the normal and curve vectors and vertices for next iteration
-
-        prevNormalX      = normalX;
-        prevNormalY      = normalY;
-        prevNormalZ      = normalZ;
-
-        prevCurveX       = curveX;
-        prevCurveY       = curveY;
-        prevCurveZ       = curveZ;
-
-        prevTopRightX    = currentTopRightX;
-        prevTopRightY    = currentTopRightY;
-        prevTopRightZ    = currentTopRightZ;
-
-        prevBottomRightX = currentBottomRightX;
-        prevBottomRightY = currentBottomRightY;
-        prevBottomRightZ = currentBottomRightZ;
-        
-        prevTopLeftX     = currentTopLeftX;
-        prevTopLeftY     = currentTopLeftY;
-        prevTopLeftZ     = currentTopLeftZ;
-        
-        prevBottomLeftX  = currentBottomLeftX;
-        prevBottomLeftY  = currentBottomLeftY;
-        prevBottomLeftZ  = currentBottomLeftZ;
-    }
-}
-
-
 function getCentrePoint( points ) {
 
     // calculate the sum of all the points
-    let pointsSum = points.reduce( (acc,val) => v3add(acc,val), v3zero );
+    let pointsSum = points.reduce( v3add, v3zero );
 
     // return the average point to approximate the centre of mass
     return v3scale( pointsSum, 1 / points.length );
@@ -703,8 +362,8 @@ function getCentrePoint( points ) {
 function getBBox( inPoints ) {
 
     // loop over inPoints, getting the top and bottom corners
-    let topCorner    = inPoints.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
-    let bottomCorner = inPoints.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
+    let topCorner    = inPoints.reduce( v3max, v3neg(v3inf) );
+    let bottomCorner = inPoints.reduce( v3min,       v3inf  );
 
     // return the bounding box
     return { right:     topCorner[0],
@@ -722,23 +381,18 @@ function getBBox( inPoints ) {
 function getBoundingPoints( inPoints ) {
 
     // loop over inPoints, getting the top and bottom corners
-    let topCorner    = inPoints.reduce( (acc,val) => v3max( acc, val ), [-Infinity, -Infinity, -Infinity] );
-    let bottomCorner = inPoints.reduce( (acc,val) => v3min( acc, val ), [ Infinity,  Infinity,  Infinity] );
+    let topCorner    = inPoints.reduce( v3max, v3neg(v3inf) );
+    let bottomCorner = inPoints.reduce( v3min,       v3inf  );
 
     // add an extra profile width onto the corners to make sure we dont miss any
     const extraBit   = [ uProfileWidth, uProfileWidth, uProfileWidth ];
     topCorner        = v3add( topCorner   , extraBit ); 
-    bottomCorner     = v3sub( bottomCorner, extraBit ); 
+    bottomCorner     = v3sub( bottomCorner, extraBit );
 
-    // return the bounding points
-    return [ 
-             [    topCorner[0],    topCorner[1],    topCorner[2] ],
-             [    topCorner[0],    topCorner[1], bottomCorner[2] ],
-             [    topCorner[0], bottomCorner[1], bottomCorner[2] ],
-             [ bottomCorner[0], bottomCorner[1], bottomCorner[2] ],
-             [ bottomCorner[0], bottomCorner[1],    topCorner[2] ],
-             [ bottomCorner[0],    topCorner[1],    topCorner[2] ],
-             [ bottomCorner[0],    topCorner[1], bottomCorner[2] ],
-             [    topCorner[0], bottomCorner[1],    topCorner[2] ]
-           ];
+    // make a corners array and all possible combinations for the 8 corners
+    const corners    = [ topCorner, bottomCorner ];
+    const combos     = [...Array(8).keys()].map( x => [1 & x, 1 & x>>1, 1 & x>>2] );
+
+    // map the possible combos into corner coords and return
+    return combos.map( ([c0,c1,c2]) => [ corners[c0][0], corners[c1][1], corners[c2][2] ] );
 }

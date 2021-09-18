@@ -187,8 +187,6 @@ const downloadSTLButton   = document.querySelector( "#download-stl" );
 downloadSTLButton.onclick = () => {};
 
 [ equationXInput, equationYInput, equationZInput ].forEach( elm => elm.addEventListener("input", updateConstUI) );
-Array.from( document.querySelectorAll("button") ).forEach( elm => elm.addEventListener( "click", e => elm.focus() ) );
-
 
 const getLabel = constInputDiv => constInputDiv.querySelector( "p.const-input-label" );
 const getInput = constInputDiv => constInputDiv.querySelector( "input"               );

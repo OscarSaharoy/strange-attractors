@@ -79,7 +79,7 @@ function updateGeometry() {
     boundingPoints = getBoundingPoints( points );
 
     // build the geometry from the points
-    calcGeometryData( points, verts, norms, idxs, profile, sharpEdges=sharpEdges );
+    calcGeometryData( points, verts, norms, idxs, profile );
 
     // fill the buffers with the geometry data
     fillBuffer( gl, gl.ARRAY_BUFFER        , positionBuffer, verts );
@@ -151,9 +151,6 @@ let nPoints = 3500;
 let points  = new Array(nPoints);
 let start   = [ 0.1, -0.1, 8.8 ];
 let profile = pentalobeProfile( uProfileWidth );
-
-// controls whether the mesh is rendered with sharp edges
-let sharpEdges = true;
 
 // arrays that will contain the strange attractor geometry data
 let nVerts = nPoints * 2 * profile.length + 1;

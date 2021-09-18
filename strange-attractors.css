@@ -12,6 +12,7 @@
 	--canvas-background: #ffffff;
 	--top-whitespace: min( 10vh, 10vw );
  	touch-action: none;
+ 	-webkit-tap-highlight-color: transparent;
 }
 
 @media only screen and (max-width: 800px) {

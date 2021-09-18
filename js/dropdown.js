@@ -6,6 +6,8 @@ const innerButtons  = Array.from( document.querySelectorAll( "#dropdown-inner bu
 
 innerButtons.forEach( elm => elm.addEventListener( "click", () => onButtonClick(elm) ) );
 innerButtons.forEach( elm => elm.addEventListener( "pointerdown", () => onButtonPointerDown(elm) ) );
+// innerButtons.forEach( elm => elm.addEventListener( "click", e => elm.focus() ) );
+
 
 function onButtonClick( elm ) {
 	
