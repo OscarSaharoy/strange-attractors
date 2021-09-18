@@ -11,11 +11,15 @@
 // rendering many times over a few frames allows us to multiply the power of the gpu by the number of frames rendered, allowing eg global illumination using textures/buffers to store data between passes.
 
 // todo:
+
+// first release
+// mobile layout & ability to scroll - need to detect if mouse/pointer is inside projected bounding box
+// download stl
 // animate geometry generation
-// mobile layout & ability to scroll
+
+// stretch
 // use webgl2 when possible
 // reduce number of extensions needed
-// download stl
 // performance tuning
 // progressive rendering
 // sliders (not that important)

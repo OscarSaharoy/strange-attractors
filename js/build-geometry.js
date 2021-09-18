@@ -731,7 +731,8 @@ function getBoundingPoints( inPoints ) {
     bottomCorner     = v3sub( bottomCorner, extraBit ); 
 
     // return the bounding points
-    return [ [    topCorner[0],    topCorner[1],    topCorner[2] ],
+    return [ 
+             [    topCorner[0],    topCorner[1],    topCorner[2] ],
              [    topCorner[0],    topCorner[1], bottomCorner[2] ],
              [    topCorner[0], bottomCorner[1], bottomCorner[2] ],
              [ bottomCorner[0], bottomCorner[1], bottomCorner[2] ],
@@ -739,5 +740,5 @@ function getBoundingPoints( inPoints ) {
              [ bottomCorner[0],    topCorner[1],    topCorner[2] ],
              [ bottomCorner[0],    topCorner[1], bottomCorner[2] ],
              [    topCorner[0], bottomCorner[1],    topCorner[2] ]
-           ]
+           ];
 }

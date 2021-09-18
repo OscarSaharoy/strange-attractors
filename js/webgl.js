@@ -13,7 +13,7 @@ function initgl( canvasID ) {
     
     if( !gl ) {
 
-        gl = canvas.getContext("webgl", {antialias: true});
+        gl = canvas.getContext("webgl", {antialias: true, preserveDrawingBuffer: true});
         webgl2 = false;
 
         // try to enable the uint index extension to allow more verts
@@ -255,4 +255,16 @@ function createFramebuffer( gl, width, height, depthTexUnit=gl.TEXTURE0, colorTe
     );
 
     return newFramebuffer;
+}
+
+function getAlphaAtLocation( pos ) {
+
+    // create the array to read pixel into
+    const array = new Uint8Array(4);
+
+    // read pixel into the array
+    gl.readPixels( pos[0], pos[1], 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, array );
+
+    // return the alpha value
+    return array[3];
 }

@@ -108,8 +108,13 @@ h1 {
 }
 
 @media only screen and (max-width: 600px) {
+	#title-container {
+		padding-bottom: 45vh;
+		pointer-events: auto;
+	}
+
 	#ui-top {
-		margin-top: 45vh;
+		touch-action: auto;
 	}
 }
 

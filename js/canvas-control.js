@@ -21,6 +21,8 @@ let skip1Frame         = false;
 let shouldRedraw       = false;
 let dpr                = 1; // vital
 let furthestLeft       = Infinity;
+let clipSpaceBBox      = [];
+let clipSpaceBpoints   = [];
 
 let interactiveUIElements = Array.from( document.querySelectorAll( "input, button" ) );
 let uiScrollElement = document.querySelector( "#ui" );
@@ -37,11 +39,46 @@ function setPointerMeanAndSpread() {
     endToEndVector = v3norm( getEndToEnd( pointers ) );
 }
 
+// check if a ray going +z at mousepos will intersect the bounding box
+// function intersectBoundingBox( event ) {
+
+//     // get the mouse pos in clip space
+//     const canvasBrect       = canvas.getBoundingClientRect();
+//     const [ sizeX, sizeY ]  = [ canvasBrect.width, canvasBrect.height ];
+//     const clipSpaceMousePos = [ event.pageX / sizeX * 2 - 1, 1 - event.pageY / sizeY * 2, -1 ];
+
+//     // get the ray origin aligned with the bounding box
+//     const nonAlignedOrigin = [ ...v3sub( clipSpaceMousePos, clipSpaceBBox.centre ), 0 ];
+//     const alignedOrigin = vec4.transformMat4( [], nonAlignedOrigin, uModelViewMatrix );
+
+//     // define a ray direction in positive z clip space then rotate to align with bounding box
+//     const nonAlignedRay = [0, 0, 1, 0];
+//     const alignedRay = vec4.transformMat4( [], nonAlignedRay, uModelViewMatrix );
+
+//     const boxSize = v3abs( vec4.transformMat4( [], [...clipSpaceBpoints[0], 1], mat4.transpose( [], uModelMatrix ) ) );
+//     const rd = alignedRay;
+//     const ro = alignedOrigin;
+
+//     const m  = [ 1/rd[0], 1/rd[1], 1/rd[2] ];
+//     const n  = v3mul( m, ro );
+//     const k  = v3mul( v3abs(m), boxSize );
+//     console.log(m,n,k);
+//     const t1 = v3sub( v3neg(n), k );
+//     const t2 = v3sub( k, n );
+//     console.log(t1,t2)
+//     const tN = Math.max( Math.max( t1[0], t1[1] ), t1[2] );
+//     const tF = Math.min( Math.min( t2[0], t2[1] ), t2[2] );
+//     console.log(tN,tF)
+//     return !( tN > tF || tF < 0 );
+// }
+
 function pointerdown( event ) {
+
+    // getAlphaAtLocation( [ event.pageX*dpr, canvas.height - event.pageY*dpr ] );
 
     if( interactiveUIElements.includes( event.target ) ) return;
 
-    // dragging the geometry so prvent default and defocus everything
+    // dragging the geometry so prevent default and defocus everything
     event.preventDefault();
     document.activeElement.blur();
 

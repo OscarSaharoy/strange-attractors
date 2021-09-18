@@ -141,11 +141,18 @@ function updateMVPMatrices() {
     // get the inverse projection matrix
     mat4.invert( uInverseProjectionMatrix, uProjectionMatrix );
 
+    // get bounding points for the geometry in clip space
+    clipSpaceBpoints = mapByMat4( boundingPoints, mat4.mul([], uProjectionMatrix, uModelViewMatrix) );
 
     // get the furthest left point of the clip space bounding box
-    const clipSpaceBBox = getBBox( mapByMat4( boundingPoints, mat4.mul([], uProjectionMatrix, uModelViewMatrix) ) );
-    furthestLeft = clipSpaceBBox.left;
+    clipSpaceBBox = getBBox( clipSpaceBpoints );
+    furthestLeft  = clipSpaceBBox.left;
 
+    // place bounding box corners
+    // const csbp = clipSpaceBpoints;
+    // if( csbp.length )
+    //     Array.from( document.querySelectorAll( ".marker" ) )
+    //         .forEach( (elm,i) => elm.style.transform = `translateX(${ csbp[i][0]*50+50 }vw) translateY(${ -csbp[i][1]*50+50 }vh)` );
 
     // update the sun projection matrix to fit the geometry to the shadow map
 

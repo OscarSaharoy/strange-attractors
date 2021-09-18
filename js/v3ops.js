@@ -17,6 +17,12 @@ const v3scale = (vA, s ) => [ vA[0] * s ,
                               vA[1] * s , 
                               vA[2] * s ];
 
+const v3mul   = (vA, vB) => [ vA[0] * vB[0] ,
+                              vA[1] * vB[1] , 
+                              vA[2] * vB[2] ];
+
+const v3abs   = (vA    ) => [ Math.abs(vA[0]), Math.abs(vA[1]), Math.abs(vA[2]) ];
+
 const v3dot   = (vA, vB) => vA[0]*vB[0] + vA[1]*vB[1] + vA[2]*vB[2];
 
 const v3cross = (vA, vB) => [ vA[1]*vB[2] - vA[2]*vB[1] ,
