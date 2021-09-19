@@ -4,9 +4,8 @@
 // get mean and spread of a list of pointer positions
 const getMeanPointer   = arr => arr.reduce( (acc, val) => v3add( acc, v3scale(val, 1/arr.length ) ), v3zero );
 const getPointerSpread = (positions, mean) => positions.reduce( (acc, val) => acc + ((val[0]-mean[0])**2 + (val[1]-mean[1])**2)**0.5, 0 );
-const getPointerTwist  = (positions, mean) => positions.reduce( (acc, val) => acc + v3mod( v3cross( [0,1,0], v3sub(val, mean) ) ), 0 );
 const getPositionDiffs = positions => positions.slice(1).map( (val,i) => v3sub( val, positions[i] ) ); 
-const getEndToEnd      = positions => getPositionDiffs( positions ).reduce( (acc,val) => v3add(acc, val), v3zero );
+const getEndToEnd      = positions => getPositionDiffs( positions ).reduce( v3add, v3zero );
 
 // vars to track panning and zooming
 let activePointers     = [];
@@ -28,6 +27,10 @@ let interactiveUIElements = Array.from( document.querySelectorAll( "input, butto
 let uiScrollElement = document.querySelector( "#ui" );
 
 
+// returns true if the pointer event occured over the geometry as rendered to the screen
+const pointerOverGeometry = evt => !!getAlphaAtLocation( [ evt.pageX*dpr, canvas.height - evt.pageY*dpr ] );
+
+
 function setPointerMeanAndSpread() {
 
     // get all the pointer vectors
@@ -39,55 +42,23 @@ function setPointerMeanAndSpread() {
     endToEndVector = v3norm( getEndToEnd( pointers ) );
 }
 
-// check if a ray going +z at mousepos will intersect the bounding box
-// function intersectBoundingBox( event ) {
-
-//     // get the mouse pos in clip space
-//     const canvasBrect       = canvas.getBoundingClientRect();
-//     const [ sizeX, sizeY ]  = [ canvasBrect.width, canvasBrect.height ];
-//     const clipSpaceMousePos = [ event.pageX / sizeX * 2 - 1, 1 - event.pageY / sizeY * 2, -1 ];
-
-//     // get the ray origin aligned with the bounding box
-//     const nonAlignedOrigin = [ ...v3sub( clipSpaceMousePos, clipSpaceBBox.centre ), 0 ];
-//     const alignedOrigin = vec4.transformMat4( [], nonAlignedOrigin, uModelViewMatrix );
-
-//     // define a ray direction in positive z clip space then rotate to align with bounding box
-//     const nonAlignedRay = [0, 0, 1, 0];
-//     const alignedRay = vec4.transformMat4( [], nonAlignedRay, uModelViewMatrix );
-
-//     const boxSize = v3abs( vec4.transformMat4( [], [...clipSpaceBpoints[0], 1], mat4.transpose( [], uModelMatrix ) ) );
-//     const rd = alignedRay;
-//     const ro = alignedOrigin;
-
-//     const m  = [ 1/rd[0], 1/rd[1], 1/rd[2] ];
-//     const n  = v3mul( m, ro );
-//     const k  = v3mul( v3abs(m), boxSize );
-//     console.log(m,n,k);
-//     const t1 = v3sub( v3neg(n), k );
-//     const t2 = v3sub( k, n );
-//     console.log(t1,t2)
-//     const tN = Math.max( Math.max( t1[0], t1[1] ), t1[2] );
-//     const tF = Math.min( Math.min( t2[0], t2[1] ), t2[2] );
-//     console.log(tN,tF)
-//     return !( tN > tF || tF < 0 );
-// }
 
 function pointerdown( event ) {
 
-    // getAlphaAtLocation( [ event.pageX*dpr, canvas.height - event.pageY*dpr ] );
+    console.log( pointerOverGeometry(event) );
 
-    if( interactiveUIElements.includes( event.target ) ) return;
+    if( interactiveUIElements.includes( event.target ) && !pointerOverGeometry( event ) ) return;
 
     // dragging the geometry so prevent default and defocus everything
     event.preventDefault();
     document.activeElement.blur();
 
     // add the pointer to pointerPositions and activePointers
-    pointerPositions[event.pointerId] = [event.pageX*dpr, -event.pageY*dpr, 0];
+    pointerPositions[event.pointerId] = [event.pageX, -event.pageY, 0];
     activePointers.push( event.pointerId );
 
     // set the mean pointer position so that we have access to the new meanPointer straight away
-    setPointerMeanAndSpread()
+    setPointerMeanAndSpread();
 
     // we added a new pointer so skip a frame to prevent
     // a step change in pan position
@@ -96,15 +67,15 @@ function pointerdown( event ) {
 
 function pointermove( event ) {
 
-    // event.preventDefault();
-
     // if this pointer isn't an active pointer
     // (pointerdown occured over a preventDrag element)
     // then do nothing
     if( !activePointers.includes(event.pointerId) ) return;
 
+    event.preventDefault();
+
     // keep track of the pointer pos
-    pointerPositions[event.pointerId] = [ event.pageX*dpr, -event.pageY*dpr, 0 ];
+    pointerPositions[event.pointerId] = [ event.pageX, -event.pageY, 0 ];
 }
 
 function pointerup( event ) {
@@ -169,9 +140,7 @@ function wheel( event ) {
     if( uiScrollElement.contains( event.target ) ) {
 
         // under these conditions, prevent default scroll and zoom the geometry
-        if( ( furthestLeft < -0.6 )
-         || ( event.deltaY < 0 && uiScrollElement.scrollTop == 0 )
-         || ( event.deltaY > 0 && uiScrollElement.scrollTop + 1 > scrollTopMax ) ) event.preventDefault();
+        if( pointerOverGeometry( event ) ) event.preventDefault();
         
         // in other conditions, return from the function and scroll the ui
         else return;

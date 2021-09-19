@@ -13,7 +13,7 @@
 // todo:
 
 // first release
-// mobile layout & ability to scroll - need to detect if mouse/pointer is inside projected bounding box
+// mobile layout & ability to scroll
 // download stl
 // animate geometry generation
 
