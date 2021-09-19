@@ -183,6 +183,10 @@ const profileWidthInput   = document.querySelector( "#profile-width-input" );
 const recalculateButton   = document.querySelector( "#recalculate" );
 recalculateButton.onclick = recalculate;
 
+const helpButton          = document.querySelector( "#help"      );
+const helpText            = document.querySelector( "#help-text" );
+helpButton.onclick        = () => helpText.classList.toggle( "hidden" );
+
 // const downloadSTLButton   = document.querySelector( "#download-stl" );
 // downloadSTLButton.onclick = () => {};
 

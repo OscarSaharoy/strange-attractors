@@ -39,11 +39,14 @@
 
 	<div id="ui-top">
 		<h1> strange attractors </h1>
-		<button id="recalculate"  type="button" onclick=""> recalculate  </button>
+		<button id="recalculate" type="button" onclick=""> recalculate  </button>
+		<button id="help" type="button" onclick=""> help  </button>
 		<!-- <button id="download-stl" type="button" onclick=""> download stl </button> -->
 	</div>	
 	
 	<form id="ui-scroll" spellcheck="false">
+
+		<p id="help-text" class="hidden"> This webapp allows you to generate and view strange attractor geometry. You can change the settings on the left, then hit the recalculate button to generate new geometry which is displayed in the centre of the screen. You can pan around the geometry using mouse or by dragging on touch screen, and you can zoom and twist by scrolling/pinching. You can choose a setting from the presets dropdown to quickly see a few different attractors. </p>
 
 		<label> preset </label>
 		<div id="dropdown-outer">

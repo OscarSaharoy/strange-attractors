@@ -24,7 +24,7 @@ let clipSpaceBBox      = [];
 let clipSpaceBpoints   = [];
 
 let interactiveUIElements = Array.from( document.querySelectorAll( "input, button" ) );
-let uiScrollElement = document.querySelector( "#ui" );
+let uiScrollElement = document.querySelector( "#ui-scroll" );
 
 
 // returns true if the pointer event occured over the geometry as rendered to the screen
@@ -46,9 +46,10 @@ function setPointerMeanAndSpread() {
 
 function pointerdown( event ) {
 
-    // if the user has tapped on an interactive element or is scrolling, do nothing
+    // if the user isn't manipulating the geometry and the user has tapped on an interactive
+    // element or is scrolling, do nothing
     if( ( uiScrollElement.contains( event.target ) || interactiveUIElements.includes( event.target ) )
-        && !pointerOverGeometry( event ) ) return;
+        && !pointerOverGeometry( event ) && !activePointers.length ) return;
 
     // dragging the geometry so prevent default and defocus everything
     event.preventDefault();
@@ -157,7 +158,10 @@ function wheel( event ) {
 
 function touchmove( event ) {
 
-    if( !uiScrollElement.contains( event.target ) || touchOverGeometry( event ) ) event.preventDefault?.();
+    if( !(uiScrollElement.contains( event.target ) || interactiveUIElements.includes( event.target ) )
+        || touchOverGeometry( event ) || activePointers.length )
+        
+        event.preventDefault?.();
 }
 
 
