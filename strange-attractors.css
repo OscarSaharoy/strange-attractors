@@ -16,18 +16,21 @@
  	-webkit-tap-highlight-color: transparent;
 }
 
-/*@media only screen and (max-width: 800px) {
+@media only screen and (max-width: 800px) {
 	:root {
 		font-size: 0.6rem;
 	}
-}*/
+}
 
 body {
 	display: grid;
 	width:  100vw;
-	height: 100vh;
+	min-height: 100vh;
+	/*height: 100vh;*/
 	background: var(--canvas-background);
 	overflow-x: hidden;
+	position: sticky;
+	top: 0;
 }
 
 #glcanvas {
@@ -35,7 +38,8 @@ body {
 	height: 100vh;
 	grid-row: 1;
 	grid-column: 1;
-	/*touch-action: none;*/
+	touch-action: none;
+	pointer-events: none;
 	z-index: 2;
 	position: fixed;
 }
@@ -50,6 +54,7 @@ body {
 	justify-content: left;
 	width: var(--ui-width);
 	background: var(--background);
+	white-space: nowrap;
 }
 
 #ui-top {
@@ -103,6 +108,7 @@ h2, label {
 	font-weight: 600;
 	font-size: 1.7rem;
 	margin: 1.6rem 0 0.55rem 0;
+	width: min-content;
 }
 
 p {

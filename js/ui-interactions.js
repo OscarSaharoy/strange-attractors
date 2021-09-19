@@ -183,8 +183,8 @@ const profileWidthInput   = document.querySelector( "#profile-width-input" );
 const recalculateButton   = document.querySelector( "#recalculate" );
 recalculateButton.onclick = recalculate;
 
-const downloadSTLButton   = document.querySelector( "#download-stl" );
-downloadSTLButton.onclick = () => {};
+// const downloadSTLButton   = document.querySelector( "#download-stl" );
+// downloadSTLButton.onclick = () => {};
 
 [ equationXInput, equationYInput, equationZInput ].forEach( elm => elm.addEventListener("input", updateConstUI) );
 

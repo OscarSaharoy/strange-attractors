@@ -28,7 +28,8 @@ let uiScrollElement = document.querySelector( "#ui" );
 
 
 // returns true if the pointer event occured over the geometry as rendered to the screen
-const pointerOverGeometry = evt => !!getAlphaAtLocation( [ evt.pageX*dpr, canvas.height - evt.pageY*dpr ] );
+const pointerOverGeometry = evt => !!getAlphaAtLocation( [ evt.clientX*dpr, canvas.height - evt.clientY*dpr ] );
+const touchOverGeometry   = evt => !!getAlphaAtLocation( [ evt.touches[0].clientX*dpr, canvas.height - evt.touches[0].clientY*dpr ] );
 
 
 function setPointerMeanAndSpread() {
@@ -45,9 +46,9 @@ function setPointerMeanAndSpread() {
 
 function pointerdown( event ) {
 
-    console.log( pointerOverGeometry(event) );
-
-    if( interactiveUIElements.includes( event.target ) && !pointerOverGeometry( event ) ) return;
+    // if the user has tapped on an interactive element or is scrolling, do nothing
+    if( ( uiScrollElement.contains( event.target ) || interactiveUIElements.includes( event.target ) )
+        && !pointerOverGeometry( event ) ) return;
 
     // dragging the geometry so prevent default and defocus everything
     event.preventDefault();
@@ -67,12 +68,9 @@ function pointerdown( event ) {
 
 function pointermove( event ) {
 
-    // if this pointer isn't an active pointer
-    // (pointerdown occured over a preventDrag element)
-    // then do nothing
+    // if this pointer isn't an active pointer (pointerdown occured
+    // over a preventDrag element) then do nothing
     if( !activePointers.includes(event.pointerId) ) return;
-
-    // event.preventDefault();
 
     // keep track of the pointer pos
     pointerPositions[event.pointerId] = [ event.pageX, -event.pageY, 0 ];
@@ -133,9 +131,8 @@ function panAndZoom() {
 
 function wheel( event ) {
 
-
-    // get the largest value that uiScrollElement.scrollHeight can take +/-1
-    const scrollTopMax = uiScrollElement.scrollHeight - uiScrollElement.clientHeight;
+    // prevent default body scrolling if the event is outside the uiScrollElement
+    if( !uiScrollElement.contains( event.target ) ) event.preventDefault?.();
 
     // handle the case where the cursor is over the ui entries etc
     if( uiScrollElement.contains( event.target ) ) {
@@ -158,10 +155,17 @@ function wheel( event ) {
     shouldRedraw = true;
 }
 
+function touchmove( event ) {
+
+    if( !uiScrollElement.contains( event.target ) || touchOverGeometry( event ) ) event.preventDefault?.();
+}
+
 
 // add event listeners to body
 document.body.addEventListener( "pointerdown",  pointerdown );
 document.body.addEventListener( "pointerup",    pointerup   );
 document.body.addEventListener( "pointerleave", pointerup   );
-document.body.addEventListener( "pointermove",  pointermove );
-document.body.addEventListener( "wheel",        wheel, {passive: false} );
+document.body.addEventListener( "pointermove",  pointermove, {passive: false} );
+document.body.addEventListener( "wheel",        wheel      , {passive: false} );
+document.body.addEventListener( "touchstart",   touchmove  , {passive: false} );
+// document.body.addEventListener( "touchmove",    touchmove  , {passive: false} );
