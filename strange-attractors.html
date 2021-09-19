@@ -5,6 +5,8 @@
 <head>
 
 	<link href="strange-attractors.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
 	<link rel="preconnect" href="https://fonts.gstatic.com">
 	<link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
 
@@ -35,11 +37,11 @@
 
 <div id="ui">
 
-	<div id="title-container">
+	<div id="ui-top">
 		<h1> strange attractors </h1>
 		<button id="recalculate"  type="button" onclick=""> recalculate  </button>
 		<button id="download-stl" type="button" onclick=""> download stl </button>
-	</div>
+	</div>	
 	
 	<form id="ui-scroll" spellcheck="false">
 
@@ -71,14 +73,14 @@
 			</div>
 		</div>
 
-		<!-- <div class="three-column constants">
+		<div class="three-column constants">
 			<p> a </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
 			<p> b </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
 			<p> c </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
 			<p> d </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
 			<p> e </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
 			<p> f </p>  <p class="equals"> = </p> <input type="number" step="0.1"/>
-		</div> -->
+		</div>
 
 		<label> start position </label>
 		<div class="three-column constants">
@@ -110,9 +112,10 @@
 	</form>
 	
 	<div id="ui-bottom">
-		<a class="link" target="blank" href="https://chaoticatmospheres.com/" style="margin-bottom: 1rem;"> inspiration for this project </a>
+		<a class="link" target="blank" href="https://chaoticatmospheres.com/"> inspiration for this project </a>
 		<a class="link" target="blank" href="https://github.com/OscarSaharoy"> @OscarSaharoy on github </a>
 	</div>
+	
 
 </div>
 

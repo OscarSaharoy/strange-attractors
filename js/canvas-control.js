@@ -72,7 +72,7 @@ function pointermove( event ) {
     // then do nothing
     if( !activePointers.includes(event.pointerId) ) return;
 
-    event.preventDefault();
+    // event.preventDefault();
 
     // keep track of the pointer pos
     pointerPositions[event.pointerId] = [ event.pageX, -event.pageY, 0 ];
@@ -132,6 +132,7 @@ function panAndZoom() {
 }
 
 function wheel( event ) {
+
 
     // get the largest value that uiScrollElement.scrollHeight can take +/-1
     const scrollTopMax = uiScrollElement.scrollHeight - uiScrollElement.clientHeight;
