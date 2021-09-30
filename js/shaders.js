@@ -5,7 +5,7 @@
 const vsSource = `
 // ==================================================================================================================
 
-precision mediump float;
+precision highp float;
 
 uniform vec3 uViewPos;
 uniform vec3 uSunPos;
@@ -45,7 +45,7 @@ void main() {
 
 #define SHADOW_SAMPLES 8
 
-precision mediump float;
+precision highp float;
 
 uniform vec3 uViewPos;
 uniform sampler2D uShadowMap;
@@ -129,7 +129,7 @@ void main() {
 `; const vShadowShaderSource = `
 // ==================================================================================================================
 
-precision mediump float;
+precision highp float;
 
 uniform vec3 uSunPos;
 uniform mat4 uModelSunViewMatrix;
@@ -152,7 +152,7 @@ void main() {
 `; const fShadowShaderSource = `
 // ==================================================================================================================
 
-precision mediump float;
+precision highp float;
 
 varying float depth;
 
@@ -176,7 +176,7 @@ void main() {
 `; const vDepthShaderSource = `
 // ==================================================================================================================
 
-precision mediump float;
+precision highp float;
 
 uniform mat4 uViewMatrix;
 uniform mat4 uModelMatrix;
@@ -204,9 +204,9 @@ void main() {
 `; const fDepthShaderSource = `
 // ==================================================================================================================
 
-precision mediump float;
+precision highp float;
 
-varying mediump vec4 vLighting;
+varying highp vec4 vLighting;
 
 void main() {
 
@@ -218,7 +218,7 @@ void main() {
 `; const vAmbientOcclusionShaderSource = `
 // ==================================================================================================================
 
-precision mediump float;
+precision highp float;
 
 uniform mat4 uInverseProjectionMatrix;
 
@@ -244,7 +244,7 @@ void main() {
 
 #define AO_SAMPLES 8
 
-precision mediump float;
+precision highp float;
 
 uniform float uProfileWidth;
 uniform mat4 uProjectionMatrix;
