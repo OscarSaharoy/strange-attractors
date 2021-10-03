@@ -23,7 +23,7 @@ let furthestLeft       = Infinity;
 let clipSpaceBBox      = [];
 let clipSpaceBpoints   = [];
 
-let interactiveUIElements = Array.from( document.querySelectorAll( "input, button" ) );
+let interactiveUIElements = Array.from( document.querySelectorAll( "input, button, a" ) );
 let uiScrollElement = document.querySelector( "#ui-scroll" );
 
 
